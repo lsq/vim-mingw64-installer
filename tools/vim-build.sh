@@ -107,7 +107,7 @@ VIMVERMAJOR=$(awk -F'.' '{print $1$2}' <<< "$newerVer")
 interfaceInfo=$(cat src/vim-"${VIMVER}"/src/if_ver.txt|sed -r -n 's/\s*(.*):\s*$/\* \1:/;3!p')
 if [ -z "$APPVEYOR_REPO_NAME" ]; then
    CI_REPO_NAME=$GITHUB_REPOSITORY
-    CI_REPO_TAG_NAME="vim${VIMVER}"
+    CI_REPO_TAG_NAME="${VIMVER}"
     echo "tagName=${CI_REPO_TAG_NAME}" >> $GITHUB_ENV
 else
     CI_REPO_NAME=$APPVEYOR_REPO_NAME
