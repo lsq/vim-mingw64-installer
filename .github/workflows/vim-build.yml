@@ -27,11 +27,14 @@ jobs:
 
     steps:
       - name: Check vim source version
-        uses: oprypin/find-latest-tag@v1
-        with:
-          repository: vim/vim  # The repository to scan.
+        #uses: oprypin/find-latest-tag@v1
+        #with:
+        #  repository: vim/vim  # The repository to scan.
           #prefix: 'v'
           #releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        uses: lsq/find-latest-tag@v1.0.0
+        with:
+          repo: https://github.com/vim/vim.git
         id: vim_version # The step ID to refer to later.
       - run: echo "Latest vim source version is at ${{ steps.vim_version.outputs.tag }}"
 
