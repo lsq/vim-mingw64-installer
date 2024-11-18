@@ -1,0 +1,107 @@
+name: Vim Build
+
+on:
+  schedule:
+    - cron: "30 0/8 * * 0/2"
+  workflow_dispatch:
+#    inputs:
+#      IMG_URL:    
+#        description: 'IMG_URL'
+#        required: false
+#        default: ''
+#
+jobs:
+  build:
+    #if: github.event.repository.owner.id == github.event.sender.id
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        include: [
+          { msystem: ucrt64, toolchain: ucrt-x86_64 }
+          #,
+          #{ msystem: mingw64, toolchain: x86_64 },
+          #{ msystem: mingw32, toolchain: i686 }
+          ]
+      fail-fast: false
+
+    steps:
+      - name: Check vim source version
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: vim/vim  # The repository to scan.
+          #releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        id: vim_version # The step ID to refer to later.
+      - run: echo "Latest vim source version is: ${{steps.vim_version.outputs.tag}}"
+
+      - name: Check vim-mingw64 build version
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: lsq/vim-mingw64-installer
+        id: build_version
+      - run: echo "Latest vim-mingw64 build version is: ${{steps.build_version.outputs.tag}}"
+
+      - name: Early exit
+        shell: pwsh
+        run: |
+          $src_version=${{steps.vim_version.outputs.tag}}
+          $release_version=${{steps.build_version.outputs.tag}}
+          if ([Version]$src_version -gt [Version]$release_version){
+            echo "New build will start ..."
+          }
+          else {
+            echo "Now build will cancel ..."
+            gh run cancel ${{ github.run_id }}
+            gh run watch ${{ github.run_id }}
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: mingw-w64-${{ matrix.toolchain }}-toolchain base-devel binutils git
+          pacboy: >-
+            aria2:p
+            ca-certificates
+          update: true
+          path-type: inherit
+
+      - name: Set vim build tag
+        #if: ${{ "${{github.event.inputs.IMG_URL}}" }}
+        if: github.event.inputs.IMG_URL != ''
+        shell: msys2 {0}
+        run:
+          echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
+
+      - name: Install scoop tools
+        shell: pwsh
+        run: .\tools\scoop_vim_install.ps1
+        
+      - name: Build vim
+        shell: msys2 {0}
+        run: |
+          bash -x tools/vim-build.sh && ls tools/vim/
+        env:
+          MINGW_ARCH: ${{ matrix.msystem }}
+          PKGEXT: ".pkg.tar.zst"
+        #shell: cmd
+        #run: set
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            tools/vim/gvim_*_x86_64.zip
+            tools/vim/mingw-w64-ucrt-x86_64-vim*.pkg.tar.zst
+      #      ./DeviceTree.zip
+      #    name: TWRP_Device_Tree-${{ github.run_id }}
+          name: ${{env.tagName}}
+      #    tag_name: ${{ github.run_id }}
+          tag_name: ${{env.tagName}}
+      #    body: DeviceTree for twrp
+          body_path: gitlog.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
