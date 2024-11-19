@@ -13,5 +13,5 @@ unzip gvim_9.x.x_x86_64zip
 
 for ucrt64:
 ```bash
-pacman -U mingw-w64-ucrt-x86_64-vim91-9.1.0849-1-any.pkg.tar.zst  --overwrite "*"
+pacman -U mingw-w64-ucrt-x86_64-vim91-9.1.0849-1-any.pkg.tar.zst  --overwrite '*'
 ```

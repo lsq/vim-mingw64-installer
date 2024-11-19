@@ -117,9 +117,9 @@ URL="https://github.com/$CI_REPO_NAME/releases/download"
 releaseLog="[![${CI_REPO_NAME}](https://img.shields.io/github/downloads/${CI_REPO_NAME}/${CI_REPO_TAG_NAME}/total.svg)](https://github.com/${CI_REPO_NAME}/releases/tag/${CI_REPO_TAG_NAME})
 ### Files:
 #### :unlock: Unsigned Files:
-* [![gvim_${VIMVER}_x64.zip](https://img.shields.io/github/downloads/${CI_REPO_NAME}/${CI_REPO_TAG_NAME}/gvim_${VIMVER}_x64.zip.svg?label=downloads&logo=vim)](${URL}/${CI_REPO_TAG_NAME}/gvim_${VIMVER}_x86_64.zip)
+* [![gvim_${VIMVER}_x86_64.zip](https://img.shields.io/github/downloads/${CI_REPO_NAME}/${CI_REPO_TAG_NAME}/gvim_${VIMVER}_x86_64.zip.svg?label=downloads&logo=vim)](${URL}/${CI_REPO_TAG_NAME}/gvim_${VIMVER}_x86_64.zip)
         64-bit zip archive
-* [![gvim_${VIMVER}_x64.zip](https://img.shields.io/github/downloads/${CI_REPO_NAME}/${CI_REPO_TAG_NAME}/mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst.svg?label=downloads&logo=vim)](${URL}/${CI_REPO_TAG_NAME}/mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst)
+* [![gvim_${VIMVER}_x86_64.zip](https://img.shields.io/github/downloads/${CI_REPO_NAME}/${CI_REPO_TAG_NAME}/mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst.svg?label=downloads&logo=vim)](${URL}/${CI_REPO_TAG_NAME}/mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst)
         64-bit ucrt installer archive
 
 <details>
