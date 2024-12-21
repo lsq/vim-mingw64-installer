@@ -72,7 +72,7 @@ jobs:
             ca-certificates
           update: true
           path-type: inherit
-          location: C:\
+          #location: C:\
           release: false
 
       - name: Set vim build tag
