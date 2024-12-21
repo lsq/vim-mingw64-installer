@@ -73,6 +73,7 @@ jobs:
           update: true
           path-type: inherit
           location: C:\
+          release: false
 
       - name: Set vim build tag
         #if: ${{ "${{github.event.inputs.IMG_URL}}" }}
