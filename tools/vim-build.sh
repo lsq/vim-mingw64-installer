@@ -33,35 +33,36 @@ rubyapiver=$(ruby -v | sed -r -n 's/.* (([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2} 
 #sed -i "s|RUBY_VER=32|RUBY_VER=${rubyversion}|" PKGBUILD
 #sed -i "s|RUBY_API_VER_LONG=3.2.0|RUBY_API_VER_LONG=${rubyapiver}|" PKGBUILD
 sed -n 's/\r//p' PKGBUILD
+sed -i -r 's/(ruby)[^>]*(>=)([^"]*)/\1'$rubyversion'\2'$rubyapiver'/' PKGBUILD
 export rubyversion rubyapiver rubyhm
 
-pythonver=$(sed 's/\x0d\x0a//' <<< $(powershell '$webc=(iwr https://www.python.org/downloads/windows).content; $mstatus = $webc -match "Latest Python \d Release - Python (?<version>[\d.]+)"; $Matches["version"]'))
+pythonver=$(sed 's/\x0d\x0a//' <<<$(powershell '$webc=(iwr https://www.python.org/downloads/windows).content; $mstatus = $webc -match "Latest Python \d Release - Python (?<version>[\d.]+)"; $Matches["version"]'))
 #pypat=$(which python3)
 #pydir=${rbpat%/*}
 #pyhm=${rbdir%/*}
 pymajor=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2/p')
 pyminor=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\3/p')
 pyversion=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p') # 313
-pyapiver=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2}))\.[0-9]{1,2}.*/\1/p') # 3.13
+pyapiver=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2}))\.[0-9]{1,2}.*/\1/p')    # 3.13
 if pacboy find "python${pyapiver}:p"; then
-	pacboy find "python${pyapiver}:p"
-else 
-	pyversion=$((pyversion -1))
-	pyapiver=${pymajor}.$((pyminor - 1))
-	pacboy find "python${pyapiver}:p" || { echo "python $pyapiver not find" && exit 1; }
+    pacboy find "python${pyapiver}:p"
+else
+    pyversion=$((pyversion - 1))
+    pyapiver=${pymajor}.$((pyminor - 1))
+    pacboy find "python${pyapiver}:p" || { echo "python $pyapiver not find" && exit 1; }
 fi
 export pyversion pyapiver
 #sed -n 's/\r//p' PKGBUILD
 
 luaversion=$(lua -v | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p')
-tclshversionlong=$(tclsh - <<< 'puts $tcl_patchLevel')
+tclshversionlong=$(tclsh - <<<'puts $tcl_patchLevel')
 tclversion=$(echo ${tclshversionlong} | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p')
 tclapiver=$(echo ${tclshversionlong} | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2}))\.[0-9]{1,2}.*/\1/p')
 perlversion=$(perl -v | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p')
 export luaversion perlversion tclversion tclapiver
 
 racketBin=$(which racket)
-if [[ ${racketBin} =~ "shim" ]] ;then
+if [[ ${racketBin} =~ "shim" ]]; then
     racketB=$(cat ${racketBin}.shim)
     racketBHome=${racketB##*\ }
 fi
@@ -71,44 +72,44 @@ echo ${racketHome}
 racketlib=${racketHome}/lib
 echo ${racketlib}
 mzlib=$(ls ${racketlib}/libracket*.dll)
-mzVer=$(sed 's|libracket||;s|\.dll||' <<< $(basename "$mzlib"))
+mzVer=$(sed 's|libracket||;s|\.dll||' <<<$(basename "$mzlib"))
 echo $mzVer
 export racketHome
 export mzVer
 
 pkgver() {
-  local ver
-  ver=$(curl https://api.github.com/repos/vim/vim/tags | jq -r '.[0].name'|sed 's/v//') 
-  if [[ -z $ver ]]; then
-	prjInfo=$(curl https://release-monitoring.org/project/5092)
-	#echo $prjInfo
-	ver=$(echo ${prjInfo} | sed -n '/>Latest version<\/h/{:t N;s|.*>Latest version<\/h.*doap:Version\">\([^<]*\) (.*</div>.*|\1|p;T t;q}')
-  fi
-  if [[ -n $GITHUB_ACTIONS && -n $vimTag ]]; then
+    local ver
+    ver=$(curl https://api.github.com/repos/vim/vim/tags | jq -r '.[0].name' | sed 's/v//')
+    if [[ -z $ver ]]; then
+        prjInfo=$(curl https://release-monitoring.org/project/5092)
+        #echo $prjInfo
+        ver=$(echo ${prjInfo} | sed -n '/>Latest version<\/h/{:t N;s|.*>Latest version<\/h.*doap:Version\">\([^<]*\) (.*</div>.*|\1|p;T t;q}')
+    fi
+    if [[ -n $GITHUB_ACTIONS && -n $vimTag ]]; then
         ver=$vimTag
-  fi
-  printf "${ver}"
-  #sed -n 's/\r//p' PKGBUILD
+    fi
+    printf "${ver}"
+    #sed -n 's/\r//p' PKGBUILD
 }
 olderVer=$(sed -n ':t;n;s/pkgver=\(.*\)/\1/;T t;p;q' PKGBUILD)
 newerVer=$(pkgver)
 if [ -n "$newerVer" ] && [ $(vercmp "$olderVer" "$newerVer") -ne 0 ]; then
-	sed -i "/^\(pkgver=\).*/{s/^\(pkgver=\).*/\1$newerVer/;}" PKGBUILD
-	updpkgsums
-	#chsm=$(makepkg-mingw -oeg |sed ':t;N;$! bt;s/\n/|/g;s/\x27/#/g;')
-	#sed -i '\~^sha256sums=~{:t N;s~.*\x27)~'"$chsm"'~;T t;s~#~\x27~g;s~|~\n~g;}' PKGBUILD
-	#printf '%s\n' "g/1/s//$chsm/" 'wq' | ed -s sed.txt
+    sed -i "/^\(pkgver=\).*/{s/^\(pkgver=\).*/\1$newerVer/;}" PKGBUILD
+    updpkgsums
+    #chsm=$(makepkg-mingw -oeg |sed ':t;N;$! bt;s/\n/|/g;s/\x27/#/g;')
+    #sed -i '\~^sha256sums=~{:t N;s~.*\x27)~'"$chsm"'~;T t;s~#~\x27~g;s~|~\n~g;}' PKGBUILD
+    #printf '%s\n' "g/1/s//$chsm/" 'wq' | ed -s sed.txt
 fi
 #MINGW_ARCH=ucrt64 makepkg-mingw -eo
 MINGW_ARCH=ucrt64 makepkg-mingw -sLf --noconfirm
 libsodiumVer=$(pacman -Qi mingw-w64-ucrt-x86_64-libsodium | grep -Po '^(版本|Version)\s*: \K.+')
 VIMVER="$newerVer"
-VIMVERMAJOR=$(awk -F'.' '{print $1$2}' <<< "$newerVer")
-interfaceInfo=$(cat src/vim-"${VIMVER}"/src/if_ver.txt|sed -r -n 's/\s*(.*):\s*$/\* \1:/;3!p')
+VIMVERMAJOR=$(awk -F'.' '{print $1$2}' <<<"$newerVer")
+interfaceInfo=$(cat src/vim-"${VIMVER}"/src/if_ver.txt | sed -r -n 's/\s*(.*):\s*$/\* \1:/;3!p')
 if [ -z "$APPVEYOR_REPO_NAME" ]; then
-   CI_REPO_NAME=$GITHUB_REPOSITORY
+    CI_REPO_NAME=$GITHUB_REPOSITORY
     CI_REPO_TAG_NAME="${VIMVER}"
-    echo "tagName=${CI_REPO_TAG_NAME}" >> $GITHUB_ENV
+    echo "tagName=${CI_REPO_TAG_NAME}" >>$GITHUB_ENV
 else
     CI_REPO_NAME=$APPVEYOR_REPO_NAME
     CI_REPO_TAG_NAME=$APPVEYOR_REPO_TAG_NAME
@@ -130,8 +131,8 @@ ${interfaceInfo}
 "
 #if [[ -n $APPVEYOR_REPO_NAME ]]; then
 if [ -n "$APPVEYOR_REPO_NAME" ]; then
-    echo "$releaseLog" | sed -e ':a;N;$!ba;s/\n/\\n/g' > "$basedir"/../gitlog.txt
+    echo "$releaseLog" | sed -e ':a;N;$!ba;s/\n/\\n/g' >"$basedir"/../gitlog.txt
 else
-    echo "$releaseLog" > "$basedir"/../gitlog.txt
+    echo "$releaseLog" >"$basedir"/../gitlog.txt
 fi
 cat "$basedir"/../gitlog.txt
