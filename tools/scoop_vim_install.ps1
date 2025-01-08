@@ -80,7 +80,7 @@ function Write-Env {
 }
 C:\msys64\usr\bin\bash.exe -lc "pacman --noconfirm -Syuu"
 C:\msys64\usr\bin\bash.exe -lc "pacman --noconfirm -Syuu"
-C:\msys64\usr\bin\bash.exe -lc "pacman --noconfirm -Sy mingw-w64-ucrt-x86_64-aria2"
+#C:\msys64\usr\bin\bash.exe -lc "pacman --noconfirm -Sy mingw-w64-ucrt-x86_64-aria2"
 #Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 . $PSScriptRoot\install-scoop.ps1
 iwr -useb https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim |`

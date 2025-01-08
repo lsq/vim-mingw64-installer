@@ -4,6 +4,8 @@ echo "$MSYSTEM"
 pacman --noconfirm --sync --needed pactoys
 pacman-key --recv-keys BE8BF1C5
 pacman-key --lsign-key BE8BF1C5
+pacman-key --recv-keys AAE32BA7
+pacman-key --lsign-key AAE32BA7
 repman add ci.ri2 "https://github.com/oneclick/rubyinstaller2-packages/releases/download/ci.ri2"
 pacman -Syuu --noconfirm
 #pacman -Sy --needed --noconfirm "ruby$rubyversion"
