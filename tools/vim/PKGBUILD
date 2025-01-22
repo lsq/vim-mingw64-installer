@@ -238,7 +238,7 @@ package() {
 
     cd "${srcdir}"/${_realname}-${pkgver}/src
     cp -rf ../README.txt ../runtime
-    cp -rf ../README.???.txt ../runtime
+    # cp -rf ../README.???.txt ../runtime
     cp -rf ../uninstall.txt ../runtime
     cp -rf ../vimtutor.bat ../runtime
     cp -rf *.exe ../runtime
