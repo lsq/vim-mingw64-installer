@@ -1,0 +1,271 @@
+# Maintainer: Alexey Pavlov <alexpux@gmail.com>
+# Maintainer: Francesco Corte <francesco.corte9001@gmail.com>
+
+_realname=vim
+pkgver=9.1.1048
+_topver=${pkgver%.*}
+_patchlevel=${pkgver##*.}
+_versiondir="${_realname}${_topver//./}"
+pkgbase="mingw-w64-vim${_topver//./}"
+pkgname="${MINGW_PACKAGE_PREFIX}-vim${_topver//./}"
+
+pkgrel=1
+pkgdesc='Vi Improved, a highly configurable, improved version of the vi text editor'
+#mingw_arch=('mingw64' 'ucrt64' 'clang64' 'clangarm64')
+mingw_arch=('ucrt64')
+#arch=('x86_64')
+arch=('any')
+license=('custom:vim')
+ruby_home=$rubyhome
+url="https://www.vim.org"
+msys2_repository_url="https://github.com/vim/vim"
+msys2_references=(
+    "anitya: 5092"
+    "cpe: cpe:/a:vim:vim"
+    "cpe: cpe:/a:vim_development_group:vim"
+)
+depends=("${MINGW_PACKAGE_PREFIX}-ncurses" "${MINGW_PACKAGE_PREFIX}-ruby34>=3.4.0" "${MINGW_PACKAGE_PREFIX}-python>=${pyapiver}.0" "${MINGW_PACKAGE_PREFIX}-lua>=5.4.0" "${MINGW_PACKAGE_PREFIX}-libiconv" "libintl" "libxcrypt" "${MINGW_PACKAGE_PREFIX}-perl>=5.38.0" "${MINGW_PACKAGE_PREFIX}-gettext-runtime" "${MINGW_PACKAGE_PREFIX}-libsodium" "${MINGW_PACKAGE_PREFIX}-winpty" "${MINGW_PACKAGE_PREFIX}-tcl>=8.6.0")
+groups=('editors')
+makedepends=("gawk" "${MINGW_PACKAGE_PREFIX}-make" "${MINGW_PACKAGE_PREFIX}-7zip" "${MINGW_PACKAGE_PREFIX}-autotools" "${MINGW_PACKAGE_PREFIX}-cc") # To satisfy python3/dyn feature #3052
+source=(${_realname}-${pkgver}.tar.gz::https://github.com/vim/vim/archive/v${pkgver}/${_realname}-${pkgver}.tar.gz
+    'dot.vimrc'
+    '7.3-cygwin-mouse.patch'
+    '7.3-virc.patch'
+    '7.3-cygwin-python-dyn.patch'
+    'pretend-cygwin-msys.patch'
+    'accept-crlf.patch'
+    'vim-completion')
+noextract=(${_realname}-${pkgver}.tar.gz)
+sha256sums=('0a34ed1e2ca6a08b5fd28a12c33c39f66f405dddd0e7fc88212c7a90062abf22'
+            'edd18e0756406ee7b659e4552e444c50c3a0c1e9fb4fce2ddd770c933ea6c7f5'
+            'bca6e030d50c0d2468ab5c78aa0b359eb18a88a197de8406c593458ffedde922'
+            '44d7738a8f801195898eeef766ff77506c717dd5d19145ade3c1c2349d4bc4fd'
+            'd60db82149b68c6e3bfc7f840191af3e5cbc8af46409ec3b752407689c44f35b'
+            '5fcec194d2fcb2a624358d8ce074e8d97b873b5c2fff2118491b57a4880737d9'
+            'b98b4807d6c2011836191bddce1e28b22c44649e7059af646d25187d13eea549'
+            'bdca6069ef0fa995718f4b59fea85e58629259bb5a385d53e52d162d1463d4ff')
+
+prepare() {
+	# https://github.com/msys2/MSYS2-packages/issues/1216
+	echo $(pwd)
+	#[[ -d ${_realname}-${pkgver} ]] && rm -rf ${_realname}-${pkgver}
+	bsdtar -xf "${srcdir}/${_realname}-${pkgver}.tar.gz" 2>/dev/null || MSYS=winsymlinks:lnk tar zxf "${srcdir}/${_realname}-${pkgver}.tar.gz"
+	bsdtar -xf "${srcdir}/${_realname}-${pkgver}.tar.gz"
+	
+	#tar zxf "${srcdir}/${pkgname}-${pkgver}.tar.gz" || true
+	MSYS=winsymlinks:lnk tar zxf "${srcdir}/${_realname}-${pkgver}.tar.gz"
+    cd ${srcdir}/${_realname}-${pkgver}
+
+    iconv -f ISO-8859-1 -t UTF-8 runtime/doc/eval.txt \
+        >runtime/doc/eval.tmp && mv -f runtime/doc/eval.{tmp,txt}
+
+    patch -p2 -i ${srcdir}/7.3-cygwin-mouse.patch
+    #patch -p2 -i ${srcdir}/7.3-virc.patch
+    patch -p2 -i ${srcdir}/7.3-cygwin-python-dyn.patch
+    patch -p1 -i ${srcdir}/pretend-cygwin-msys.patch
+    patch -p1 -i ${srcdir}/accept-crlf.patch
+
+    # define the place for the global (g)vimrc file (set to /etc/vimrc)
+    #sed -i 's|^.*\(#define SYS_.*VIMRC_FILE.*"\) .*$|\1|' \
+    #  vim-build/src/feature.h
+    #sed -i 's|^.*\(#define VIMRC_FILE.*"\) .*$|\1|' \
+    #  vim-build/src/feature.h
+
+    # define perl core position
+    sed -i 's|^\(PERLLIB=\$(PERL)/lib\)$|\1/perl5/core_perl|' \
+        src/Make_cyg_ming.mak
+
+    # commit awk path
+    sed -i 's|^\(include ../../src/auto/config.mk\)|#\1|' runtime/doc/Makefile
+
+    # printf rubylib value
+    sed -i "/\@echo \x27char_u \*all_cflags.*/s/$/\n\t@echo \x27------\"\$(LUA_LIB) \$(MZSCHEME_LIBDIR) \$(MZSCHEME_LIB) \$(PYTHONLIB) \$(PYTHON3LIB) \$(RUBYLIB)\"\x27 >> lb.txt\n/" src/Make_cyg_ming.mak
+    sed -i '/\@echo char_u \*all_cflags.*/s/$/\n\t@echo -+-+-+-+-+-\"\$(LUA_LIB) \$(MZSCHEME_LIBDIR) \$(MZSCHEME_LIB) \$(PYTHONLIB) \$(PYTHON3LIB) \$(RUBYLIB)\" >> lb.txt\n/' src/Make_cyg_ming.mak
+
+    # patch window ucrt build used for mingw64 shell enviroment;
+    sed -i '/p = exe_name;/s/^.*$/{char_u \*phf;char_u \*p_shell;int exe_len;if (exe_name != NULL \&\& \*exe_name != NUL){char_u \*exe_pend;exe_pend = gettail(exe_name);exe_len = STRLEN(exe_name) - STRLEN(exe_pend); phf = alloc(exe_len + 4);if (phf != NULL){STRNCPY(phf, exe_name, exe_len);STRCPY(phf + exe_len, (char_u \*)"doc");}};if ((p_shell = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p_shell != NUL \&\& phf != NULL  \&\& \*phf != NUL \&\& access(phf, F_OK) != 0 \&\& access(default_vimruntime_dir, F_OK) == 0) {p = default_vimruntime_dir;}else{p = exe_name;}}/' src/misc1.c
+
+    # patch system() in zsh terminal: p_shcf is "/c", not "-c"
+    # sed -i '/^#endif/{N;s#^\(\#endif\)\n\s\+vim_snprintf((char \*)newcmd, cmdlen, "%s %s %s",$#\1#;T e;N;s#^\(\#endif\n\).*$#\1{char_u \*p_shell; p_shell = mch_getenv((char_u \*)"SHELL");if (p_shell != NULL \&\& \*p_shell != NUL) { p_shcf = (char_u \*)"-c";} vim_snprintf((char \*)newcmd, cmdlen, "%s %s %s", p_sh, p_shcf, cmd); }#;:e}' src/os_win32.c
+
+    # patch  garbled GETTEXT messages
+    #sed -i '/\s\+(void)bind_textdomain_codeset(VIMPACKAGE,/s/^/     SetConsoleCP(CP_UTF8);\n   SetConsoleOutputCP(CP_UTF8);\n/' src/mbyte.c
+    sed -i '/\s\+(void)bind_textdomain_codeset(VIMPACKAGE,/s/^/   SetConsoleOutputCP(CP_UTF8);\n/' src/mbyte.c
+
+    # install xpm header
+    cd "${srcdir}"/.. || exit 1
+    [ ! -f libXmp/xpm.pc.in ] && git clone https://github.com/koron/libXpm-win32 libXmp
+    cd libXmp/src
+    mingw32-make -f Make_ming.mak GUI=yes ARCH=x86-64
+    cp -rf libXpm.dll libXpm.a ${srcdir}/${_realname}-${pkgver}/src/xpm/x64/lib/
+    #cd src
+    #autoconf
+}
+
+build() {
+    cd "${srcdir}"/"${_realname}"-"${pkgver}" || exit 1
+
+    #  ./configure \
+    #    --prefix=${MINGW_PREFIX} \
+    #    --build=${MINGW_CHOST} \
+    #    --host=${MINGW_CHOST} \
+    #    --target=${MINGW_CHOST} \
+    #    --with-features=huge \
+    #    --with-tlib=ncursesw \
+    #    --enable-cscope \
+    #    --enable-multibyte \
+    #    --enable-luainterp=dynamic \
+    #    --enable-perlinterp=dynamic \
+    #    --enable-pythoninterp=no \
+    #    --enable-python3interp=dynamic \
+    #    --enable-rubyinterp=dynamic \
+    #    --enable-tclinterp=dynamic \
+    #    --without-x \
+    #    CPPFLAGS="${CPPFLAGS} " \
+    #    --with-compiledby="<https://www.msys2.org/>"
+
+    #make auto/osdef.h
+    #make -j1 VIMRCLOC=/etc VIMRUNTIMEDIR=/usr/share/vim/vim${_topver/\.}
+    cd src
+    mingw32-make -f Make_ming.mak \
+        GUI=yes OLE=yes DIRECTX=yes VIMDLL=yes FEATURES=HUGE IME=yes ICONV=yes DEBUG=no \
+        SODIUM=yes POSTSCRIPT=yes TERMINAL=yes TERMGUICOLORS=yes VTP=yes \
+        STATIC_STDCPLUS=yes \
+        BALLOON_EVAL_TERM=yes \
+        PYTHON3=${MINGW_PREFIX} \
+        PYTHON3_HOME=${MINGW_PREFIX} \
+        PYTHON3INC=-I${MINGW_PREFIX}/include/python${pyapiver} \
+        DYNAMIC_PYTHON3=yes \
+        PYTHON3_VER=${pyversion} \
+        DYNAMIC_PYTHON3_DLL=libpython${pyapiver}.dll \
+        LUA=${MINGW_PREFIX} DYNAMIC_LUA=yes LUA_VER=$luaversion \
+        RUBY=${rubyhm} DYNAMIC_RUBY=yes RUBY_VER=${rubyversion} RUBY_API_VER_LONG=${rubyapiver} WINVER=0x601 \
+        PERL=${MINGW_PREFIX} DYNAMIC_PERL=yes PERL_VER=$perlversion \
+        MZSCHEME="${racketHome}" DYNAMIC_MZSCHEME=yes MZSCHEME_VER=${mzVer} \
+        TCL=${MINGW_PREFIX} DYNAMIC_TCL=yes TCL_VER=$tclversion TCL_VER_LONG=$tclapiver \
+        VIMRCLOC=${MINGW_PREFIX}/share/vim VIMRUNTIMEDIR=${MINGW_PREFIX}/share/vim/vim${_topver/\./}
+
+    #
+
+    cd ${srcdir}/${_realname}-${pkgver}/runtime/doc
+    make all
+
+    cd ${srcdir}/${_realname}-${pkgver}/src/po
+    mingw32-make -f Make_ming.mak install-all
+
+    cd ${srcdir}/${_realname}-${pkgver}/src/GvimExt
+    cat >nmake-build.bat <<-'EOF'
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+for /f "usebackq delims=" %%i in (`"%VSWHERE%" -products * -latest -property installationPath`) do (set VCVARSALL="%%i\VC\Auxiliary\Build\vcvarsall.bat")
+call %VCVARSALL% x64
+::set
+%VCVARSALL% x64 && set MAKEFLAGS= && nmake.exe /f Make_mvc.mak CPU=AMD64 clean all > ..\gvimext.log
+::set
+EOF
+    #cmd //c start nmake-build.bat
+    #MSYS2_ARG_CONV_EXCL='*' /c/Windows/System32/cmd.exe /C "start nmake-build.bat"
+    mkdir -p ../GvimExt64
+    cp -rf gvimext.dll gvimext64.dll
+    cp -rf gvimext.dll ../GvimExt64/gvimext64.dll
+    #./nmake-build.bat
+
+    mv gvimext.dll ../GvimExt64/gvimext.dll
+    cp -rf README.txt ../GvimExt64
+    cp -rf *.inf ../GvimExt64
+    cp -rf *.reg ../GvimExt64
+
+}
+
+check() {
+    # disable tests because they seem to freeze
+
+    cd "${srcdir}"/${_realname}-${pkgver}/src
+    ./gvim.exe -silent -register
+    ./gvim.exe -u NONE -c "redir @a | ver | 0put a | wq!" ver.txt
+    [ -f ./gvimext.log ] && cat gvimext.log
+    [ -f ./ver.txt ] && cat ver.txt && ./vim.exe --version
+    export PATH=$racketHome:$rubyhm/bin:$PATH && ./gvim.exe -u NONE -S "${srcdir}"/../if_ver.vim -c "quit"
+    [ -f ./if_ver.txt ] && cat if_ver.txt
+
+    #make test
+}
+
+package() {
+    pwd
+    cd ${pkgdir}/../
+    #mkdir -p "${pkgdir}"/${MINGW_PREFIX}/bin/
+    install -Dm644 "${srcdir}"/${_realname}-${pkgver}/src/vimtutor "${pkgdir}"/${MINGW_PREFIX}/bin/vimtutor
+    install -Dm644 "${srcdir}"/${_realname}-${pkgver}/src/*.exe "${pkgdir}"/${MINGW_PREFIX}/bin
+    install -Dm644 "${srcdir}"/${_realname}-${pkgver}/src/vimtutor "${pkgdir}"/${MINGW_PREFIX}/bin/vimtutor
+    install -Dm644 "${srcdir}"/${_realname}-${pkgver}/src/vim64.dll "${pkgdir}"/${MINGW_PREFIX}/bin/vim64.dll
+    install -Dm644 "${srcdir}"/${_realname}-${pkgver}/src/xxd/xxd.exe "${pkgdir}"/${MINGW_PREFIX}/bin/xxd.exe
+    install -Dm644 "${srcdir}"/${_realname}-${pkgver}/src/xpm/x64/lib/* "${pkgdir}"/${MINGW_PREFIX}/bin
+    rm -rf "${pkgdir}"/${MINGW_PREFIX}/bin/{un,}install.exe
+    mkdir -p "${pkgdir}"/${MINGW_PREFIX}/share/vim
+    rm -rf "${srcdir}"/${_realname}-${pkgver}/runtime/syntax/{testdir,generator}
+    cp -rf "${srcdir}"/${_realname}-${pkgver}/runtime "${pkgdir}"/${MINGW_PREFIX}/share/vim/${_versiondir}
+
+    #for x in ex rvi vi.exe
+    #do
+    #  cp -f vi.exe ${pkgdir}/${MINGW_PREFIX}/bin/${x}
+    #done
+
+    for y in vimdiff view rview rvim; do
+        cp -f ${pkgdir}/${MINGW_PREFIX}/bin/vim.exe ${pkgdir}/${MINGW_PREFIX}/bin/${y}
+    done
+
+    mkdir -p ${pkgdir}/${MINGW_PREFIX}/share/bash-completion/completions
+    cp -f ${srcdir}/vim-completion ${pkgdir}/${MINGW_PREFIX}/share/bash-completion/completions/vim
+
+    # delete some manpages
+    #find "${pkgdir}"/${MINGW_PREFIX}/share/man -type d -name 'man1' 2>/dev/null | \
+    #  while read _mandir; do
+    #  cd ${_mandir}
+    #  rm -f ex.1 # provided by (n)vi
+    #  rm -f evim.1    # this does not make sense if we have no GUI
+    #done
+
+    # fix FS#17216
+    sed -i 's|messages,/var|messages,/var/log/messages.log,/var|' \
+        "${pkgdir}"/${MINGW_PREFIX}/share/vim/${_versiondir}/filetype.vim
+
+    # patch filetype.vim for better handling of pacman related files
+    sed -i "s/rpmsave/pacsave/;s/rpmnew/pacnew/;s/,\*\.ebuild/\0,PKGBUILD*,*.install/" \
+        "${pkgdir}"/${MINGW_PREFIX}/share/vim/${_versiondir}/filetype.vim
+    sed -i "/find the end/,+3{s/changelog_date_entry_search/changelog_date_end_entry_search/}" \
+        "${pkgdir}"/${MINGW_PREFIX}/share/vim/${_versiondir}/ftplugin/changelog.vim
+
+    # rc files
+    install -Dm644 "${srcdir}"/dot.vimrc "${pkgdir}"/etc/skel/.vimrc
+
+    # license
+    install -Dm644 "${srcdir}"/vim-${pkgver}/runtime/doc/uganda.txt \
+        "${pkgdir}"/${MINGW_PREFIX}/share/licenses/${_realname}/license.txt
+
+    cd "${srcdir}"/${_realname}-${pkgver}/src
+    cp -rf ../README.txt ../runtime
+    # cp -rf ../README.???.txt ../runtime
+    cp -rf ../uninstall.txt ../runtime
+    cp -rf ../vimtutor.bat ../runtime
+    cp -rf *.exe ../runtime
+    [ -f ./vim64.dll ] && cp -rf vim64.dll ../runtime
+    cp -rf ${MINGW_PREFIX}/bin/libsodium-*.dll ../runtime/libsodium.dll
+    #cp -rf ../runtime/libsodium.dll ../../
+    cp -rf xpm ../runtime
+    cp -rf xpm/x64/lib/* ../runtime
+    cp -rf xxd/*.exe ../runtime
+    cp -rf tee/*.exe ../runtime
+    cp -rf GvimExt64 ../runtime
+    cp -rf ${MINGW_PREFIX}/bin/libiconv-2.dll ../runtime/GvimExt64
+    cp -rf ${MINGW_PREFIX}/bin/libintl-8.dll ../runtime/GvimExt64
+    cp -rf ${MINGW_PREFIX}/bin/libiconv-2.dll ../runtime
+    cp -rf ${MINGW_PREFIX}/bin/libintl-8.dll ../runtime
+    cp -rf ../runtime/GvimExt64/gvimext.dll ../runtime
+    cp -rf ${MINGW_PREFIX}/bin/winpty* ../runtime
+    #cp -rf ${MINGW_PREFIX}/bin/winpty* ../../
+
+    mkdir -p ../vim
+    cp -rf ../runtime ../vim/${_versiondir}
+
+    7z a -mx=9 ../../../gvim_${pkgver}_x86_64.zip ../vim
+}

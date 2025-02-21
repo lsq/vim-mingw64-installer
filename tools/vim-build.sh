@@ -1,5 +1,21 @@
 set -x
-basedir=$(realpath "${0%/*}")
+function exportReplace {
+    local filePath
+
+    if [[ "$#" -lt 2 ]]; then
+        echo "Please provide at least two parameters."
+        exit 1
+    fi
+
+    local filePath="$1"
+    shift
+    while [ "$#" -gt 0 ]; do
+        sed -i 's|\${\?'"$1"'}\?|'"${!1}"'|' "$filePath"
+        shift
+    done
+}
+realpath=$(realpath "$0")
+basedir="${realpath%/*}"
 echo "$MSYSTEM"
 pacman --noconfirm --sync --needed pactoys
 pacman-key --recv-keys BE8BF1C5
@@ -25,7 +41,8 @@ echo "$PATH"
 #export PATH=$rubyhome/bin:$PATH
 #ridk.cmd install
 #echo $PATH
-ls "$rubyhome"/bin/
+#ls "$rubyhome"/bin/
+cp PKGBUILD.var PKGBUILD
 rbpat=$(which ruby)
 rbdir=${rbpat%/*}
 rubyhm=${rbdir%/*}
@@ -36,7 +53,7 @@ rubyapiver=$(ruby -v | sed -r -n 's/.* (([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2} 
 #sed -i "s|RUBY_API_VER_LONG=3.2.0|RUBY_API_VER_LONG=${rubyapiver}|" PKGBUILD
 sed -n 's/\r//p' PKGBUILD
 sed -i -r 's/(ruby)[^>]*(>=)([^"]*)/\1'$rubyversion'\2'$rubyapiver'/' PKGBUILD
-export rubyversion rubyapiver rubyhm
+exportReplace PKGBUILD rubyversion rubyapiver rubyhm
 
 pythonver=$(sed 's/\x0d\x0a//' <<<$(powershell '$webc=(iwr https://www.python.org/downloads/windows).content; $mstatus = $webc -match "Latest Python \d Release - Python (?<version>[\d.]+)"; $Matches["version"]'))
 #pypat=$(which python3)
@@ -53,7 +70,7 @@ else
     pyapiver=${pymajor}.$((pyminor - 1))
     pacboy find "python${pyapiver}:p" || { echo "python $pyapiver not find" && exit 1; }
 fi
-export pyversion pyapiver
+exportReplace PKGBUILD pyversion pyapiver
 #sed -n 's/\r//p' PKGBUILD
 
 luaversion=$(lua -v | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p')
@@ -61,7 +78,7 @@ tclshversionlong=$(tclsh - <<<'puts $tcl_patchLevel')
 tclversion=$(echo ${tclshversionlong} | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p')
 tclapiver=$(echo ${tclshversionlong} | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2}))\.[0-9]{1,2}.*/\1/p')
 perlversion=$(perl -v | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p')
-export luaversion perlversion tclversion tclapiver
+exportReplace PKGBUILD luaversion perlversion tclversion tclapiver
 
 racketBin=$(which racket)
 if [[ ${racketBin} =~ "shim" ]]; then
@@ -76,8 +93,7 @@ echo ${racketlib}
 mzlib=$(ls ${racketlib}/libracket*.dll)
 mzVer=$(sed 's|libracket||;s|\.dll||' <<<$(basename "$mzlib"))
 echo $mzVer
-export racketHome
-export mzVer
+exportReplace PKGBUILD racketHome mzVer
 
 pkgver() {
     local ver
@@ -101,10 +117,13 @@ if [ -n "$newerVer" ] && [ $(vercmp "$olderVer" "$newerVer") -ne 0 ]; then
     #chsm=$(makepkg-mingw -oeg |sed ':t;N;$! bt;s/\n/|/g;s/\x27/#/g;')
     #sed -i '\~^sha256sums=~{:t N;s~.*\x27)~'"$chsm"'~;T t;s~#~\x27~g;s~|~\n~g;}' PKGBUILD
     #printf '%s\n' "g/1/s//$chsm/" 'wq' | ed -s sed.txt
+    
+else
+    exit 1
 fi
+#export MSYS=winsymlinks:lnk
 #MINGW_ARCH=ucrt64 makepkg-mingw -eo
 ## https://github.com/msys2/MSYS2-packages/issues/1216
-export MSYS=winsymlinks:lnk
 MINGW_ARCH=ucrt64 makepkg-mingw -sLf --noconfirm
 libsodiumVer=$(pacman -Qi mingw-w64-ucrt-x86_64-libsodium | grep -Po '^(版本|Version)\s*: \K.+')
 VIMVER="$newerVer"
