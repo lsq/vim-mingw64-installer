@@ -59,15 +59,17 @@ prepare() {
     echo $(file runtime/doc/pi_netrw.txt)
     
     if file runtime/doc/pi_netrw.txt|grep symbolic; then
-    cat > cpInfo.ps1<-'EOF'
+    cat >cpInfo.ps1 <<-'EOF'
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 install-Module -Name PoshFunctions
 cd runtime\doc
 $cd = $(pwd)
 echo $cd
 $sinfo = $(get-shortcut -path "$cd\pi_netrw.txt.lnk")
+echo $sinfo
 Copy-Item -path $sinfo.TargetPath -Destination $cd\pi_netrw.txt -Force
 EOF
+
 	pwsh -command ". '.\cpInfo.ps1'"
 	fi
     iconv -f ISO-8859-1 -t UTF-8 runtime/doc/eval.txt \
