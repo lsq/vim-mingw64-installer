@@ -55,7 +55,21 @@ prepare() {
 	#tar zxf "${srcdir}/${pkgname}-${pkgver}.tar.gz" || true
 	MSYS=winsymlinks:lnk tar zxf "${srcdir}/${_realname}-${pkgver}.tar.gz"
     cd ${srcdir}/${_realname}-${pkgver}
-
+    
+    echo $(file runtime/doc/pi_netrw.txt)
+    
+    if file runtime/doc/pi_netrw.txt|grep symbolic; then
+    cat > cpInfo.ps1<-'EOF'
+Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+install-Module -Name PoshFunctions
+cd runtime\doc
+$cd = $(pwd)
+echo $cd
+$sinfo = $(get-shortcut -path "$cd\pi_netrw.txt.lnk")
+Copy-Item -path $sinfo.TargetPath -Destination $cd\pi_netrw.txt -Force
+EOF
+	pwsh -command ". '.\cpInfo.ps1'"
+	fi
     iconv -f ISO-8859-1 -t UTF-8 runtime/doc/eval.txt \
         >runtime/doc/eval.tmp && mv -f runtime/doc/eval.{tmp,txt}
 
@@ -265,6 +279,7 @@ package() {
     #cp -rf ${MINGW_PREFIX}/bin/winpty* ../../
 
     mkdir -p ../vim
+    file ../runtime/
     cp -rf ../runtime ../vim/${_versiondir}
 
     7z a -mx=9 ../../../gvim_${pkgver}_x86_64.zip ../vim
