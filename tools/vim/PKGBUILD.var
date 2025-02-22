@@ -61,7 +61,7 @@ prepare() {
     if file runtime/doc/pi_netrw.txt|grep symbolic; then
     cat >cpInfo.ps1 <<-'EOF'
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
-install-Module -Name PoshFunctions
+install-Module -Name PoshFunctions -AllowClobber
 cd runtime\doc
 $cd = $(pwd)
 echo $cd
