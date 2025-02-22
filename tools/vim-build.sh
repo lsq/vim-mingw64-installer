@@ -125,10 +125,10 @@ fi
 #MINGW_ARCH=ucrt64 makepkg-mingw -eo
 ## https://github.com/msys2/MSYS2-packages/issues/1216
 MINGW_ARCH=ucrt64 makepkg-mingw -sLf --noconfirm
-[ -f "mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst" ] || exit 1
 libsodiumVer=$(pacman -Qi mingw-w64-ucrt-x86_64-libsodium | grep -Po '^(版本|Version)\s*: \K.+')
 VIMVER="$newerVer"
 VIMVERMAJOR=$(awk -F'.' '{print $1$2}' <<<"$newerVer")
+[ -f "./mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst" ] || exit 1
 interfaceInfo=$(cat src/vim-"${VIMVER}"/src/if_ver.txt | sed -r -n 's/\s*(.*):\s*$/\* \1:/;3!p')
 if [ -z "$APPVEYOR_REPO_NAME" ]; then
     CI_REPO_NAME=$GITHUB_REPOSITORY
