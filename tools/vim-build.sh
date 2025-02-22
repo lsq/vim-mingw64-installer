@@ -117,7 +117,7 @@ if [ -n "$newerVer" ] && [ $(vercmp "$olderVer" "$newerVer") -ne 0 ]; then
     #chsm=$(makepkg-mingw -oeg |sed ':t;N;$! bt;s/\n/|/g;s/\x27/#/g;')
     #sed -i '\~^sha256sums=~{:t N;s~.*\x27)~'"$chsm"'~;T t;s~#~\x27~g;s~|~\n~g;}' PKGBUILD
     #printf '%s\n' "g/1/s//$chsm/" 'wq' | ed -s sed.txt
-    
+
 else
     exit 1
 fi
@@ -125,6 +125,7 @@ fi
 #MINGW_ARCH=ucrt64 makepkg-mingw -eo
 ## https://github.com/msys2/MSYS2-packages/issues/1216
 MINGW_ARCH=ucrt64 makepkg-mingw -sLf --noconfirm
+[ -f "mingw-w64-ucrt-x86_64-vim${VIMVERMAJOR}-${VIMVER}-1-any.pkg.tar.zst." ] || exit 1
 libsodiumVer=$(pacman -Qi mingw-w64-ucrt-x86_64-libsodium | grep -Po '^(版本|Version)\s*: \K.+')
 VIMVER="$newerVer"
 VIMVERMAJOR=$(awk -F'.' '{print $1$2}' <<<"$newerVer")
