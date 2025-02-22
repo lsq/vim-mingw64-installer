@@ -68,8 +68,8 @@ echo $cd
 $sinfo = $(get-shortcut -path "$cd\pi_netrw.txt.lnk")
 echo $sinfo
 Copy-Item -path $sinfo.TargetPath -Destination $cd\pi_netrw.txt -Force
+Remove-Item -path pi_netrw.txt.lnk -Force
 EOF
-
 	pwsh -command ". '.\cpInfo.ps1'"
 	fi
     iconv -f ISO-8859-1 -t UTF-8 runtime/doc/eval.txt \
