@@ -53,7 +53,7 @@ prepare() {
 	bsdtar -xf "${srcdir}/${_realname}-${pkgver}.tar.gz"
 	
 	#tar zxf "${srcdir}/${pkgname}-${pkgver}.tar.gz" || true
-	MSYS=winsymlinks:lnk tar zxf "${srcdir}/${_realname}-${pkgver}.tar.gz"
+	#MSYS=winsymlinks:lnk tar zxf "${srcdir}/${_realname}-${pkgver}.tar.gz"
     cd ${srcdir}/${_realname}-${pkgver}
     
     echo $(file runtime/doc/pi_netrw.txt)
@@ -108,7 +108,7 @@ EOF
     sed -i 's/\(ENABLE_ECHO_INPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_INPUT/' src/os_win32.c
     
     # patch windows terminal bash/zsh enviroments path backslash error;
-    sed -i '/mch_init();$/{s/$/\n{char_u \*p; if ((p = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p != NUL) {p_ssl = TRUE;}\n#if defined(BACKSLASH_IN_FILENAME) || defined(PROTO)\ndid_set_shellslash(NULL);\n#endif\n}' src/main.c
+    sed -i '/mch_init();$/{s/$/\n{char_u \*p; if ((p = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p != NUL) {p_ssl = TRUE;}\n#if defined(BACKSLASH_IN_FILENAME) || defined(PROTO)\ndid_set_shellslash(NULL);\n#endif\n}/}' src/main.c
 
 
     # patch  garbled GETTEXT messages
