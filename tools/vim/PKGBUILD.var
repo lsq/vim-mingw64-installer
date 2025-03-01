@@ -107,6 +107,10 @@ EOF
     # patch mch_settmode() with windows 10 terminal support raw mode;
     sed -i 's/\(ENABLE_ECHO_INPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_INPUT/' src/os_win32.c
     
+    # patch windows terminal bash/zsh enviroments path backslash error;
+    sed -i '/mch_init();$/{s/$/\n{char_u \*p; if ((p = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p != NUL) {p_ssl = TRUE;}\n#if defined(BACKSLASH_IN_FILENAME) || defined(PROTO)\ndid_set_shellslash(NULL);\n#endif\n}' src/main.c
+
+
     # patch  garbled GETTEXT messages
     #sed -i '/\s\+(void)bind_textdomain_codeset(VIMPACKAGE,/s/^/     SetConsoleCP(CP_UTF8);\n   SetConsoleOutputCP(CP_UTF8);\n/' src/mbyte.c
     sed -i '/\s\+(void)bind_textdomain_codeset(VIMPACKAGE,/s/^/   SetConsoleOutputCP(CP_UTF8);\n/' src/mbyte.c
