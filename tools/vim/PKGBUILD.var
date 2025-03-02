@@ -105,7 +105,7 @@ EOF
     sed -i '/^#endif/{N;s#^\(\#endif\)\n\s\+vim_snprintf((char \*)newcmd, cmdlen, "%s %s %s",$#\1#;T e;N;s#^\(\#endif\n\).*$#\1{char_u \*p_shell; p_shell = mch_getenv((char_u \*)"SHELL");if (p_shell != NULL \&\& \*p_shell != NUL \&\& strstr(p_sh, (char \*)"cmd.exe") == NULL) { p_shcf = (char_u \*)"-c";} vim_snprintf((char \*)newcmd, cmdlen, "%s %s %s", p_sh, p_shcf, cmd); }#;:e}' src/os_win32.c
 
     # patch mch_settmode() with windows 10 terminal support raw mode;
-    sed -i 's/\(ENABLE_ECHO_INPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_INPUT/' src/os_win32.c
+    sed -i 's/\(ENABLE_ECHO_INPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_INPUT/; s/\(ENABLE_PROCESSED_OUTPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_PROCESSING/' src/os_win32.c
     
     # patch windows terminal bash/zsh enviroments path backslash error;
     sed -i '/mch_init();$/{s/$/\n{char_u \*p; if ((p = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p != NUL) {p_ssl = TRUE;}\n#if defined(BACKSLASH_IN_FILENAME) || defined(PROTO)\ndid_set_shellslash(NULL);\n#endif\n}/}' src/main.c
