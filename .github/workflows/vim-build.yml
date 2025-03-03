@@ -102,6 +102,8 @@ jobs:
           files: |
             tools/vim/gvim_*_x86_64.zip
             tools/vim/mingw-w64-ucrt-x86_64-vim*.pkg.tar.zst
+            tools/vim/lsq*
+            tools/vim/vim-build-src.7z
       #      ./DeviceTree.zip
       #    name: TWRP_Device_Tree-${{ github.run_id }}
           name: ${{env.tagName}}

@@ -160,3 +160,11 @@ else
     echo "$releaseLog" >"$basedir"/../gitlog.txt
 fi
 cat "$basedir"/../gitlog.txt
+
+zstFiles=(*.pkg.tar.zst)
+if [ -e "${files[0]}" ]; then
+    repo-add "lsq.db.tar.zst" *.pkg.tar.zst
+fi
+
+7z a -mx=9 vim-build-src.7z src PKGBUILD libXmp if_ver.vim
+ls ./
