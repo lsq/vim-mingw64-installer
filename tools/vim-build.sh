@@ -53,7 +53,7 @@ cd "${basedir}"/vim || exit
 
 while IFS=" " read o r
 do
-   async "./get_latest.sh $o $r" success error
+   async "$basedir/get_latest.sh $o $r" success error
 done < "$basedir"/pkg.list
 
 #export LUA_PREFIX=/ucrt64
