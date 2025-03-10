@@ -1,5 +1,4 @@
 set -x
-source ./async.bash
 
 success() {
     local _content="$1"
@@ -32,6 +31,7 @@ function exportReplace {
 }
 realpath=$(realpath "$0")
 basedir="${realpath%/*}"
+source "$basedir"/async.bash
 echo "$MSYSTEM"
 pacman --noconfirm --sync --needed pactoys
 pacman-key --recv-keys BE8BF1C5
