@@ -45,6 +45,7 @@ jobs:
         id: build_version
       - run: echo "Latest vim-mingw64 build version is ${{ steps.build_version.outputs.tag }}"
 
+      - run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
 
       - name: Early exit
@@ -100,8 +101,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            tools/vim/gvim_*_x86_64.zip
-            tools/vim/mingw-w64-ucrt-x86_64-vim*.pkg.tar.zst
+            tools/vim/*.zip
+            tools/vim/*.pkg.tar.zst
             tools/vim/lsq*
             tools/vim/vim-build-src.7z
       #      ./DeviceTree.zip
