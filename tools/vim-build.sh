@@ -1,4 +1,20 @@
 set -x
+source ./async.bash
+
+success() {
+    local _content="$1"
+
+    echo -e "\033[40;32msucess: ${_content}\033[0m"
+
+}
+
+error() {
+    local _err="$1"
+
+    echo -e "\033[40;31merro: ${_err}\033[0m"
+}
+
+
 function exportReplace {
     local filePath
 
@@ -34,6 +50,12 @@ pacboy sync --needed --noconfirm ci.ri2::ruby32:p
 #MINGW_ARCH=msys makepkg-mingw --cleanbuild --syncdeps --force --noconfirm
 #cd $APPVEYOR_BUILD_FOLDER/tools/vim
 cd "${basedir}"/vim || exit
+
+while IFS=" " read o r
+do
+   async "./get_latest.sh $o $r"
+done < "$basedir"/pkg.list
+
 #export LUA_PREFIX=/ucrt64
 #export rubyhome=/c/Ruby-on-Windows/3.2.5-1
 echo "$PATH"
