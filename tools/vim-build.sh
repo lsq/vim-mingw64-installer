@@ -134,6 +134,7 @@ pkgver() {
 olderVer=$(sed -n ':t;n;s/pkgver=\(.*\)/\1/;T t;p;q' PKGBUILD)
 newerVer=$(pkgver)
 if [ -n "$newerVer" ] && [ $(vercmp "$olderVer" "$newerVer") -ne 0 ]; then
+    export newerVer
     sed -i "/^\(pkgver=\).*/{s/^\(pkgver=\).*/\1$newerVer/;}" PKGBUILD
     updpkgsums
     #chsm=$(makepkg-mingw -oeg |sed ':t;N;$! bt;s/\n/|/g;s/\x27/#/g;')
@@ -182,6 +183,9 @@ else
     echo "$releaseLog" >"$basedir"/../gitlog.txt
 fi
 cat "$basedir"/../gitlog.txt
+
+# build msys version
+bash -x $basedir/vim-build-msys.sh
 
 zstFiles=(*.pkg.tar.zst)
 if [ -e "${zstFiles[0]}" ]; then
