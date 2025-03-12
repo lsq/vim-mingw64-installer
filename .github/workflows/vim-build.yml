@@ -4,12 +4,17 @@ on:
   schedule:
     - cron: "30 0/8 * * 0/2"
   workflow_dispatch:
-#    inputs:
-#      IMG_URL:    
-#        description: 'IMG_URL'
-#        required: false
-#        default: ''
-#
+   inputs:
+     IMG_URL:    
+       description: 'IMG_URL'
+       required: false
+       default: ''
+     BUILD_MSYS:
+       description: 'build msys vim' 
+       required: false
+       default: 0
+
+
 jobs:
   build:
     #if: github.event.repository.owner.id == github.event.sender.id
@@ -52,6 +57,7 @@ jobs:
         shell: pwsh
         run: |
           $src_version=$("${{ steps.vim_version.outputs.tag }}" -replace 'v','')
+          echo "vimLatestVer=${{ steps.vim_version.outputs.tag }}" >> $env:GITHUB_ENV
           $release_version="${{ steps.build_version.outputs.tag }}"
           if ([Version]$src_version -gt [Version]$release_version){
             echo "New build will start ..."
@@ -82,6 +88,16 @@ jobs:
         shell: msys2 {0}
         run:
           echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
+
+      - name: Build vim for msys
+        if: github.event.inputs.BUILD_MSYS != 0
+        shell: msys2 {0}
+        run: |
+          set MSYSTEM=MSYS
+          echo $MSYSTEM && bash -x tools/vim-build-msys.sh
+        env:
+          MSYSTEM: MSYS
+          PKGEXT: ".pkg.tar.zst"
 
       - name: Install scoop tools
         shell: pwsh

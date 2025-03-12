@@ -185,7 +185,7 @@ fi
 cat "$basedir"/../gitlog.txt
 
 # build msys version
-bash -x $basedir/vim-build-msys.sh
+# bash -x $basedir/vim-build-msys.sh
 
 zstFiles=(*.pkg.tar.zst)
 if [ -e "${zstFiles[0]}" ]; then
