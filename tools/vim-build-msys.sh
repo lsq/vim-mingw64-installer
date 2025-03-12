@@ -1,11 +1,11 @@
 #!/bin/env bash
 set -x
 
+realpath=$(realpath "$0")
+basedir="${realpath%/*}"
 vim_msys="https://github.com/msys2/MSYS2-packages/tree/master/vim"
 npm install @dking/dgit -g
 dgit d $vim_msys -d $basedir/vim-msys
-realpath=$(realpath "$0")
-basedir="${realpath%/*}"
 cd $basedir/vim-msys || exit 1
 
 [ -n "$newerVer" ] && sed -i "/^\(pkgver=\).*/{s/^\(pkgver=\).*/\1$newerVer/;}" PKGBUILD
