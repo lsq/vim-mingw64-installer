@@ -3,7 +3,7 @@ set -x
 
 vim_msys="https://github.com/msys2/MSYS2-packages/tree/master/vim"
 npm install @dking/dgit -g
-dgit d $vim_msys -d vim-msys
+dgit d $vim_msys -d $basedir/vim-msys
 realpath=$(realpath "$0")
 basedir="${realpath%/*}"
 cd $basedir/vim-msys || exit 1
