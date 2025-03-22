@@ -87,13 +87,13 @@ jobs:
 
       - name: Set vim build tag
         #if: ${{ "${{github.event.inputs.IMG_URL}}" }}
-        if: ${{ github.event.inputs.IMG_URL != '' || env.msysV == true }}
+        if: ${{ github.event.inputs.IMG_URL != '' }}
         shell: msys2 {0}
         run:
           echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
 
       - name: Build vim for msys
-        if: github.event.inputs.BUILD_MSYS != 0 || 
+        if: ${{ github.event.inputs.BUILD_MSYS != 0 || env.msysV == true  }}
         shell: msys2 {0}
         run: |
           set MSYSTEM=MSYS
