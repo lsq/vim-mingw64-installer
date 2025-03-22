@@ -12,7 +12,7 @@ on:
      BUILD_MSYS:
        description: 'build msys vim' 
        required: false
-       default: 0
+       default: 1
 
 
 jobs:
@@ -58,6 +58,9 @@ jobs:
         run: |
           $src_version=$("${{ steps.vim_version.outputs.tag }}" -replace 'v','')
           echo "vimLatestVer=${{ steps.vim_version.outputs.tag }}" >> $env:GITHUB_ENV
+          if ($src_version.Build % 20 -eq 0) {
+            echo "msysV=true" >> $env:GITHUB_ENV
+          }
           $release_version="${{ steps.build_version.outputs.tag }}"
           if ([Version]$src_version -gt [Version]$release_version){
             echo "New build will start ..."
@@ -84,13 +87,13 @@ jobs:
 
       - name: Set vim build tag
         #if: ${{ "${{github.event.inputs.IMG_URL}}" }}
-        if: github.event.inputs.IMG_URL != ''
+        if: ${{ github.event.inputs.IMG_URL != '' || env.msysV == true }}
         shell: msys2 {0}
         run:
           echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
 
       - name: Build vim for msys
-        if: github.event.inputs.BUILD_MSYS != 0
+        if: github.event.inputs.BUILD_MSYS != 0 || 
         shell: msys2 {0}
         run: |
           set MSYSTEM=MSYS
