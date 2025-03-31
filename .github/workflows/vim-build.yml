@@ -58,11 +58,13 @@ jobs:
         run: |
           $src_version=$("${{ steps.vim_version.outputs.tag }}" -replace 'v','')
           echo "vimLatestVer=${{ steps.vim_version.outputs.tag }}" >> $env:GITHUB_ENV
-          if ($src_version.Build % 20 -eq 0) {
-            echo "msysV=true" >> $env:GITHUB_ENV
-          }
           $release_version="${{ steps.build_version.outputs.tag }}"
           if ([Version]$src_version -gt [Version]$release_version){
+            if (([Version]$src_version).Build % 10 -ge 5) {
+              if (!(([Version]$release_version).Build % 10 -ge 5 -and (([Version]$src_version).Build - ([Version]$release_version).Build) -lt 2)) {
+                echo "msysV=true" >> $env:GITHUB_ENV
+              }
+            }
             echo "New build will start ..."
           }
           else {
