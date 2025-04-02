@@ -62,7 +62,7 @@ jobs:
           if ([Version]$src_version -gt [Version]$release_version){
             if (([Version]$src_version).Build % 10 -ge 5) {
               if (!(([Version]$release_version).Build % 10 -ge 5 -and (([Version]$src_version).Build - ([Version]$release_version).Build) -lt 2)) {
-                echo "msysV=true" >> $env:GITHUB_ENV
+                echo "msysV=1" >> $env:GITHUB_ENV
               }
             }
             echo "New build will start ..."
@@ -95,7 +95,7 @@ jobs:
           echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
 
       - name: Build vim for msys
-        if: ${{ github.event.inputs.BUILD_MSYS != 0 || env.msysV == true  }}
+        if: ${{ github.event.inputs.BUILD_MSYS != 0 || env.msysV == 1 }}
         shell: msys2 {0}
         run: |
           set MSYSTEM=MSYS
