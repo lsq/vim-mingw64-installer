@@ -67,7 +67,7 @@ jobs:
             }
             echo "New build will start ..."
           }
-          elseif (${{ github.event.inputs.BUILD_MSYS }} -ne $null) {
+          elseif ($(${{ github.event.inputs.BUILD_MSYS }} + 1) -gt 1 ){
             echo "New build will start ..."
           }
           else {
