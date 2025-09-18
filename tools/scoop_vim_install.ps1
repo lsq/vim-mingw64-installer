@@ -144,9 +144,16 @@ $rubyhome = $env:rubyhome
 if ($rubyhome -eq $null) {
     $rubyhome = "c:\Ruby-on-Windows"
 }
-(iwr https://www.ruby-lang.org/en/downloads).Content -match "The current stable version is (?<version>[\d.]+)\."
+# (iwr https://www.ruby-lang.org/en/downloads).Content -match "The current stable version is (?<version>[\d.]+)\."
+$jsonObj = (iwr https://api.github.com/repos/oneclick/rubyinstaller2-packages/releases/latest).Content | ConvertFrom-Json
+# $jsonObj.assets | ConvertTo-json > githubLatest.json
+$latest = $jsonObj.assets.Where({$_.browser_download_url -match "mingw-w64-ucrt-x86_64-ruby..-.*.tar.zst$"}) | Sort-Object -Descending -Property updated_at -top 1
+if ($latest.browser_download_url) {
+  $latest.browser_download_url -match "-(?<version>[\d.]+)-"
+}
 $rubyversion = $Matches['version']
 Write-Host $rubyversion
+Write-Host $latest.browser_download_url
 $rver = ($rubyversion -split "\.")[0..1] -join ''
 
 #$rubyversion = [System.iO.Path]::GetFileName($rubyhome)
@@ -189,13 +196,13 @@ else { $dlOrNot = $true }
 if ($dlOrNot -eq $true) {
     Write-Host "Now starting download $rubyversion"
     #iwr https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-$rubyversion-1/rubyinstaller-$rubyversion-1-x64.7z -OutFile rubyinstaller-$rubyversion-1-x64.7z
-    aria2Download "https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-$rubyversion-1/rubyinstaller-$rubyversion-1-x64.7z" "./" "rubyinstaller-$rubyversion-1-x64.7z"
-    Start-Process 7z.exe -ArgumentList "x", ".\rubyinstaller-$rubyversion-1-x64.7z", "-o$rubyroot" -Wait
+    # aria2Download "https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-$rubyversion-1/rubyinstaller-$rubyversion-1-x64.7z" "./" "rubyinstaller-$rubyversion-1-x64.7z"
+    # Start-Process 7z.exe -ArgumentList "x", ".\rubyinstaller-$rubyversion-1-x64.7z", "-o$rubyroot" -Wait
     #7z x .\rubyinstaller-$rubyversion-x64.7z  -o$rubyroot
     if (Test-Path $rubyhome) {
         rm $rubyhome -Recurse -Force
     }
-    mv $rubyroot\rubyinstaller-$rubyversion-1-x64 $rubyhome
+    # mv $rubyroot\rubyinstaller-$rubyversion-1-x64 $rubyhome
 }
 
 pwd
@@ -231,8 +238,8 @@ $env:PATH = "$rubyhome\bin;$rubyhome\gems\bin;$env:PATH"
 echo $env:PATH
 Write-Env 'PATH' "$env:USER_PATH" -global
 echo $env:PATH
-which ruby
-gem install rake
+# which ruby
+# gem install rake
 <#
 $rackethome=$(scoop prefix racket-bc)
     $mzschemeVersion = (Get-Item $rackethome\lib\librack*.dll).Name -replace "libracket" -replace ".dll"
