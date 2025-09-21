@@ -25,7 +25,7 @@ function exportReplace {
     local filePath="$1"
     shift
     while [ "$#" -gt 0 ]; do
-        sed -i 's|\${\?'"$1"'}\?|'"${!1}"'|' "$filePath"
+        sed -i 's|\${\?'"$1"'}\?|'"${!1}"'|g' "$filePath"
         shift
     done
 }
