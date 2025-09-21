@@ -3,6 +3,14 @@ name: Vim Build
 on:
   schedule:
     - cron: "30 0/8 * * 0/2"
+  push:
+    branches:
+      - "master"
+    paths:
+      - 'tools/vim-build.sh'
+      - 'tools/vim-build-msys.sh'
+      - 'tools/vim/PKGBUILD.var'
+      - '.github/workflows/**'
   workflow_dispatch:
    inputs:
      IMG_URL:    
