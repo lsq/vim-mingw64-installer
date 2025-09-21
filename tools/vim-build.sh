@@ -42,7 +42,7 @@ repman add ci.ri2 "https://github.com/oneclick/rubyinstaller2-packages/releases/
 pacman -Syuu --noconfirm
 #pacman -Sy --needed --noconfirm "ruby$rubyversion"
 pacboy sync --needed --noconfirm ed:
-pacboy sync --needed --noconfirm lua:p
+pacboy sync --needed --noconfirm lua:p perl:p tcl:p
 pacboy sync --needed --noconfirm jq:p
 pacboy sync --needed --noconfirm libsodium:p
 pacboy sync --needed --noconfirm ci.ri2::ruby32:p
