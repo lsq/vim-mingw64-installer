@@ -147,7 +147,8 @@ if ($rubyhome -eq $null) {
 # (iwr https://www.ruby-lang.org/en/downloads).Content -match "The current stable version is (?<version>[\d.]+)\."
 $jsonObj = (iwr https://api.github.com/repos/oneclick/rubyinstaller2-packages/releases/latest).Content | ConvertFrom-Json
 # $jsonObj.assets | ConvertTo-json > githubLatest.json
-$latest = $jsonObj.assets.Where({$_.browser_download_url -match "mingw-w64-ucrt-x86_64-ruby..-.*.tar.zst$"}) | Sort-Object -Descending -Property updated_at -top 1
+# $latest = $jsonObj.assets.Where({$_.browser_download_url -match "mingw-w64-ucrt-x86_64-ruby..-.*.tar.zst$"}) | Sort-Object -Descending -Property updated_at -top 1
+$latest = $jsonObj.assets.Where({$_.browser_download_url -match "mingw-w64-ucrt-x86_64-ruby..-.*.tar.zst$"}) | select-Object browser_download_url | Sort-Object -descending -Bottom 1
 if ($latest.browser_download_url) {
   $latest.browser_download_url -match "-(?<version>[\d.]+)-"
 }
