@@ -24,7 +24,7 @@ msys2_references=(
     "cpe: cpe:/a:vim:vim"
     "cpe: cpe:/a:vim_development_group:vim"
 )
-depends=("${MINGW_PACKAGE_PREFIX}-ncurses" "${MINGW_PACKAGE_PREFIX}-ruby34>=3.4.0" "${MINGW_PACKAGE_PREFIX}-python${pyapiver}>=${pyapiver}.0" "${MINGW_PACKAGE_PREFIX}-lua>=5.4.0" "${MINGW_PACKAGE_PREFIX}-libiconv" "libintl" "libxcrypt" "${MINGW_PACKAGE_PREFIX}-perl>=5.38.0" "${MINGW_PACKAGE_PREFIX}-gettext-runtime" "${MINGW_PACKAGE_PREFIX}-libsodium" "${MINGW_PACKAGE_PREFIX}-winpty" "${MINGW_PACKAGE_PREFIX}-tcl>=8.6.0")
+depends=("${MINGW_PACKAGE_PREFIX}-ncurses" "${MINGW_PACKAGE_PREFIX}-ruby34>=3.4.0" "${MINGW_PACKAGE_PREFIX}-python>=${pyapiver}.0" "${MINGW_PACKAGE_PREFIX}-lua>=5.4.0" "${MINGW_PACKAGE_PREFIX}-libiconv" "libintl" "libxcrypt" "${MINGW_PACKAGE_PREFIX}-perl>=5.38.0" "${MINGW_PACKAGE_PREFIX}-gettext-runtime" "${MINGW_PACKAGE_PREFIX}-libsodium" "${MINGW_PACKAGE_PREFIX}-winpty" "${MINGW_PACKAGE_PREFIX}-tcl>=8.6.0")
 groups=('editors')
 makedepends=("gawk" "${MINGW_PACKAGE_PREFIX}-make" "${MINGW_PACKAGE_PREFIX}-7zip" "${MINGW_PACKAGE_PREFIX}-autotools" "${MINGW_PACKAGE_PREFIX}-cc") # To satisfy python3/dyn feature #3052
 source=(${_realname}-${pkgver}.tar.gz::https://github.com/vim/vim/archive/v${pkgver}/${_realname}-${pkgver}.tar.gz

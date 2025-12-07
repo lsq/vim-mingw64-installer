@@ -34,6 +34,7 @@ basedir="${realpath%/*}"
 source "$basedir"/async.bash
 echo "$MSYSTEM"
 pacman --noconfirm --sync --needed pactoys
+pacman --noconfirm --sync --needed mingw-w64-ucrt-x86_64-python
 pacman-key --recv-keys BE8BF1C5
 pacman-key --lsign-key BE8BF1C5
 pacman-key --recv-keys AAE32BA7
@@ -77,7 +78,9 @@ sed -n 's/\r//p' PKGBUILD
 sed -i -r 's/(ruby)[^>]*(>=)([^"]*)/\1'$rubyversion'\2'$rubyapiver'/' PKGBUILD
 exportReplace PKGBUILD rubyversion rubyapiver rubyhm
 
-pythonver=$(sed 's/\x0d\x0a//' <<<$(powershell '$webc=(iwr https://www.python.org/downloads/windows).content; $mstatus = $webc -match "Latest Python \d Release - Python (?<version>[\d.]+)"; $Matches["version"]'))
+# pythonver=$(sed 's/\x0d\x0a//' <<<$(powershell '$webc=(iwr https://www.python.org/downloads/windows).content; $mstatus = $webc -match "Latest Python \d Release - Python (?<version>[\d.]+)"; $Matches["version"]'))
+which python
+pythonver=$(python --version)
 #pypat=$(which python3)
 #pydir=${rbpat%/*}
 #pyhm=${rbdir%/*}
