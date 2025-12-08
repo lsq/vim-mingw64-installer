@@ -117,6 +117,9 @@ EOF
     #sed -i '/\s\+(void)bind_textdomain_codeset(VIMPACKAGE,/s/^/     SetConsoleCP(CP_UTF8);\n   SetConsoleOutputCP(CP_UTF8);\n/' src/mbyte.c
     sed -i '/\s\+(void)bind_textdomain_codeset(VIMPACKAGE,/s/^/   SetConsoleOutputCP(CP_UTF8);\n/' src/mbyte.c
 
+    # patch python lib-dyload cannot find libffi.dll
+    sed -i '/PyRun_SimpleString("import vim/{s/import sys/import os,sys;getattr(os,\x27add_dll_directory\x27,lambda x:None)(os.path.join(sys.prefix,\x27bin\x27))/}' src/if_python3.c
+
     # install xpm header
     cd "${srcdir}"/.. || exit 1
     [ ! -f libXmp/xpm.pc.in ] && git clone https://github.com/koron/libXpm-win32 libXmp
