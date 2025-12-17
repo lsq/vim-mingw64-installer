@@ -47,7 +47,7 @@ die() {
 curl -s https://api.github.com/repos/$owner/$repo/releases/latest -o latest.json
 oldver=$(cat latest.json| python -c 'import sys; from json import loads as l; print(l(sys.stdin.read())["tag_name"])')
 [ -z "$oldver" ] && die "not find $owner/$repo"
-downloadUrl=$(jq '.assets|map(.browser_download_url)| map(select(test(".*-'$oldver'-.*.tar.zst"))) | first' latest.json)
+downloadUrl=$(jq '.assets|sort_by(.updated_at)|map(.browser_download_url)|map(select(test(".*-'$oldver'-.*.tar.zst"))) |last' latest.json)
 downloadUrl=${downloadUrl//\"/}
 [[ -z $fileName ]] && fileName=$(basename ${downloadUrl})
 curl -sL ${downloadUrl} -o $fileName || die "$owner/$repo downloading failed!"
