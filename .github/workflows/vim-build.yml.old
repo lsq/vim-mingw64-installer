@@ -1,0 +1,153 @@
+name: Vim Build
+
+on:
+  schedule:
+    - cron: "30 0/8 * * 0/2"
+  push:
+    branches:
+      - "master"
+    paths:
+      - 'tools/vim-build.sh'
+      - 'tools/vim-build-msys.sh'
+      - 'tools/vim/PKGBUILD.var'
+      - '.github/workflows/**'
+  workflow_dispatch:
+   inputs:
+     IMG_URL:
+       description: 'IMG_URL'
+       required: false
+       default: ''
+     BUILD_MSYS:
+       description: 'build msys vim'
+       required: false
+       default: 0
+
+
+jobs:
+  build:
+    #if: github.event.repository.owner.id == github.event.sender.id
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        include: [
+          { msystem: ucrt64, toolchain: ucrt-x86_64 }
+          #,
+          #{ msystem: mingw64, toolchain: x86_64 },
+          #{ msystem: mingw32, toolchain: i686 }
+          ]
+      fail-fast: false
+
+    steps:
+      - name: Check vim source version
+        #uses: oprypin/find-latest-tag@v1
+        #with:
+        #  repository: vim/vim  # The repository to scan.
+          #prefix: 'v'
+          #releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        uses: lsq/find-latest-tag@v1.0.0
+        with:
+          repo: https://github.com/vim/vim.git
+        id: vim_version # The step ID to refer to later.
+      - run: echo "Latest vim source version is at ${{ steps.vim_version.outputs.tag }}"
+
+      - name: Check vim-mingw64 build version
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: lsq/vim-mingw64-installer
+        id: build_version
+      - run: echo "Latest vim-mingw64 build version is ${{ steps.build_version.outputs.tag }}"
+
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+
+      - name: Early exit
+        shell: pwsh
+        run: |
+          $src_version=$("${{ steps.vim_version.outputs.tag }}" -replace 'v','')
+          echo "vimLatestVer=${{ steps.vim_version.outputs.tag }}" >> $env:GITHUB_ENV
+          $release_version="${{ steps.build_version.outputs.tag }}"
+          if ([Version]$src_version -gt [Version]$release_version){
+            if (([Version]$src_version).Build % 10 -ge 5) {
+              if (!(([Version]$release_version).Build % 10 -ge 5 -and (([Version]$src_version).Build - ([Version]$release_version).Build) -lt 2)) {
+                echo "msysV=1" >> $env:GITHUB_ENV
+              }
+            }
+            else {
+              if (!(([Version]$release_version).Build % 10 -le 5 -and (([Version]$src_version).Build - ([Version]$release_version).Build) -lt 2)) {
+                echo "msysV=1" >> $env:GITHUB_ENV
+              }
+            }
+            echo "New build will start ..."
+          }
+          elseif ($(${{ github.event.inputs.BUILD_MSYS }} + 1) -gt 1 ){
+            echo "New build will start ..."
+          }
+          else {
+            echo "Now build will cancel ..."
+            gh run cancel ${{ github.run_id }}
+            gh run watch ${{ github.run_id }}
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          install: mingw-w64-${{ matrix.toolchain }}-toolchain base-devel binutils git
+          pacboy: >-
+            aria2:p
+            ca-certificates
+          update: true
+          path-type: inherit
+          #location: C:\
+          release: false
+
+      - name: Set vim build tag
+        #if: ${{ "${{github.event.inputs.IMG_URL}}" }}
+        if: ${{ github.event.inputs.IMG_URL != '' }}
+        shell: msys2 {0}
+        run:
+          echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
+
+      - name: Build vim for msys
+        if: ${{ github.event.inputs.BUILD_MSYS != 0 || env.msysV == 1 }}
+        shell: msys2 {0}
+        run: |
+          set MSYSTEM=MSYS
+          echo $MSYSTEM && bash -x tools/vim-build-msys.sh
+        env:
+          MSYSTEM: MSYS
+          PKGEXT: ".pkg.tar.zst"
+
+      - name: Install scoop tools
+        shell: pwsh
+        run: .\tools\scoop_vim_install.ps1
+        
+      - name: Build vim
+        shell: msys2 {0}
+        run: |
+          bash -x tools/vim-build.sh && ls tools/vim/
+        env:
+          MINGW_ARCH: ${{ matrix.msystem }}
+          PKGEXT: ".pkg.tar.zst"
+        #shell: cmd
+        #run: set
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            tools/vim/*.zip
+            tools/vim/*.pkg.tar.zst
+            tools/vim/lsq*
+            tools/vim/vim-build-src.7z
+      #      ./DeviceTree.zip
+      #    name: TWRP_Device_Tree-${{ github.run_id }}
+          name: ${{env.tagName}}
+      #    tag_name: ${{ github.run_id }}
+          tag_name: ${{env.tagName}}
+      #    body: DeviceTree for twrp
+          body_path: gitlog.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

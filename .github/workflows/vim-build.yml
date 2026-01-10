@@ -12,84 +12,114 @@ on:
       - 'tools/vim/PKGBUILD.var'
       - '.github/workflows/**'
   workflow_dispatch:
-   inputs:
-     IMG_URL:    
-       description: 'IMG_URL'
-       required: false
-       default: ''
-     BUILD_MSYS:
-       description: 'build msys vim' 
-       required: false
-       default: 0
-
+    inputs:
+      IMG_URL:
+        description: 'IMG_URL'
+        required: false
+        default: ''
+      BUILD_MSYS:
+        description: 'build msys vim'
+        required: false
+        default: '0'
 
 jobs:
-  build:
-    #if: github.event.repository.owner.id == github.event.sender.id
-    runs-on: windows-latest
-
-    strategy:
-      matrix:
-        include: [
-          { msystem: ucrt64, toolchain: ucrt-x86_64 }
-          #,
-          #{ msystem: mingw64, toolchain: x86_64 },
-          #{ msystem: mingw32, toolchain: i686 }
-          ]
-      fail-fast: false
-
+  check-version:
+    runs-on: ubuntu-latest  # 更轻量，无需 Windows
+    outputs:
+      should_build: ${{ steps.decide.outputs.should_build }}
+      vim_tag: ${{ steps.vim_version.outputs.tag }}
+      build_tag: ${{ steps.build_version.outputs.tag }}
     steps:
       - name: Check vim source version
-        #uses: oprypin/find-latest-tag@v1
-        #with:
-        #  repository: vim/vim  # The repository to scan.
-          #prefix: 'v'
-          #releases-only: true  # We know that all relevant tags have a GitHub release for them.
         uses: lsq/find-latest-tag@v1.0.0
         with:
           repo: https://github.com/vim/vim.git
-        id: vim_version # The step ID to refer to later.
-      - run: echo "Latest vim source version is at ${{ steps.vim_version.outputs.tag }}"
+        id: vim_version
 
       - name: Check vim-mingw64 build version
         uses: oprypin/find-latest-tag@v1
         with:
           repository: lsq/vim-mingw64-installer
         id: build_version
-      - run: echo "Latest vim-mingw64 build version is ${{ steps.build_version.outputs.tag }}"
+      - name: Decide whether to build
+        id: decide
+        shell: pwsh
+        run: |
+          $src_tag = "${{ steps.vim_version.outputs.tag }}"
+          $build_tag = "${{ steps.build_version.outputs.tag }}"
+          $manual_build = "${{ github.event.inputs.BUILD_MSYS }}"
+
+          $should_build = $false
+
+          # Remove 'v' prefix
+          $src_ver_str = $src_tag -replace '^v', ''
+          $build_ver_str = $build_tag -replace '^v', ''
+
+          try {
+            $src_ver = [Version]$src_ver_str
+            $build_ver = [Version]$build_ver_str
+
+            # --- 新增：主/次版本变化，或 build 差距过大 → 强制更新 ---
+            $major_changed = ($src_ver.Major -ne $build_ver.Major)
+            $minor_changed = ($src_ver.Minor -ne $build_ver.Minor)
+            $build_diff = [Math]::Abs($src_ver.Build - $build_ver.Build)
+
+            # 阈值：build 差距 > 100 视为大更新
+            $large_gap = $build_diff -gt 5
+
+            if ($major_changed -or $minor_changed -or $large_gap) {
+              $should_build = $true
+            }
+            # --- 原有逻辑：仅当小步更新时才可能跳过 ---
+            elseif ($src_ver -gt $build_ver) {
+              if ($src_ver.Build % 10 -ge 5) {
+                if (-not ($build_ver.Build % 10 -ge 5 -and ($src_ver.Build - $build_ver.Build) -lt 2)) {
+                  $should_build = $true
+                }
+              } else {
+                if (-not ($build_ver.Build % 10 -le 5 -and ($src_ver.Build - $build_ver.Build) -lt 2)) {
+                  $should_build = $true
+                }
+              }
+            }
+          } catch {
+            Write-Host "Warning: Version parsing failed, falling back to string comparison"
+            if ($src_tag -gt $build_tag) {
+              $should_build = $true
+            }
+          }
+
+          # Manual override: only if explicitly non-zero and not empty
+
+          if (![string]::IsNullOrWhiteSpace($manual_build) -and $manual_build -ne '0') {
+            $should_build = $true
+          }
+
+          Write-Host "Source: $src_ver_str, Built: $build_ver_str"
+          Write-Host "Manual input: '$manual_build'"
+          Write-Host "Final decision: should_build = $should_build"
+          echo "should_build=$should_build" >> $env:GITHUB_OUTPUT
+
+  build-and-release:
+    needs: check-version
+    if: ${{ needs.check-version.outputs.should_build == 'true' }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - { msystem: ucrt64, toolchain: ucrt-x86_64 }
+          # - { msystem: mingw64, toolchain: x86_64 }
+          # - { msystem: mingw32, toolchain: i686 }
+      fail-fast: false
+
+    steps:
+      - name: Set env from previous job
+        run: |
+          echo "vimLatestVer=${{ needs.check-version.outputs.vim_tag }}" >> $env:GITHUB_ENV
+          echo "tagName=${{ needs.check-version.outputs.vim_tag }}" >> $env:GITHUB_ENV
 
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@v5
-
-      - name: Early exit
-        shell: pwsh
-        run: |
-          $src_version=$("${{ steps.vim_version.outputs.tag }}" -replace 'v','')
-          echo "vimLatestVer=${{ steps.vim_version.outputs.tag }}" >> $env:GITHUB_ENV
-          $release_version="${{ steps.build_version.outputs.tag }}"
-          if ([Version]$src_version -gt [Version]$release_version){
-            if (([Version]$src_version).Build % 10 -ge 5) {
-              if (!(([Version]$release_version).Build % 10 -ge 5 -and (([Version]$src_version).Build - ([Version]$release_version).Build) -lt 2)) {
-                echo "msysV=1" >> $env:GITHUB_ENV
-              }
-            }
-            else {
-              if (!(([Version]$release_version).Build % 10 -le 5 -and (([Version]$src_version).Build - ([Version]$release_version).Build) -lt 2)) {
-                echo "msysV=1" >> $env:GITHUB_ENV
-              }
-            }
-            echo "New build will start ..."
-          }
-          elseif ($(${{ github.event.inputs.BUILD_MSYS }} + 1) -gt 1 ){
-            echo "New build will start ..."
-          }
-          else {
-            echo "Now build will cancel ..."
-            gh run cancel ${{ github.run_id }}
-            gh run watch ${{ github.run_id }}
-          }
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: msys2/setup-msys2@v2
         with:
@@ -100,22 +130,20 @@ jobs:
             ca-certificates
           update: true
           path-type: inherit
-          #location: C:\
           release: false
 
-      - name: Set vim build tag
-        #if: ${{ "${{github.event.inputs.IMG_URL}}" }}
+      - name: Set vim build tag (from input)
         if: ${{ github.event.inputs.IMG_URL != '' }}
         shell: msys2 {0}
-        run:
+        run: |
           echo "vimTag=${{ github.event.inputs.IMG_URL }}" >> $GITHUB_ENV
 
       - name: Build vim for msys
-        if: ${{ github.event.inputs.BUILD_MSYS != 0 || env.msysV == 1 }}
+        if: ${{ github.event.inputs.BUILD_MSYS != '0' || true }}  # Since we already decided to build
         shell: msys2 {0}
         run: |
           set MSYSTEM=MSYS
-          echo $MSYSTEM && bash -x tools/vim-build-msys.sh
+          bash -x tools/vim-build-msys.sh
         env:
           MSYSTEM: MSYS
           PKGEXT: ".pkg.tar.zst"
@@ -123,7 +151,7 @@ jobs:
       - name: Install scoop tools
         shell: pwsh
         run: .\tools\scoop_vim_install.ps1
-        
+
       - name: Build vim
         shell: msys2 {0}
         run: |
@@ -131,8 +159,6 @@ jobs:
         env:
           MINGW_ARCH: ${{ matrix.msystem }}
           PKGEXT: ".pkg.tar.zst"
-        #shell: cmd
-        #run: set
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
@@ -142,12 +168,8 @@ jobs:
             tools/vim/*.pkg.tar.zst
             tools/vim/lsq*
             tools/vim/vim-build-src.7z
-      #      ./DeviceTree.zip
-      #    name: TWRP_Device_Tree-${{ github.run_id }}
-          name: ${{env.tagName}}
-      #    tag_name: ${{ github.run_id }}
-          tag_name: ${{env.tagName}}
-      #    body: DeviceTree for twrp
+          tag_name: ${{ env.tagName }}
+          name: ${{ env.tagName }}
           body_path: gitlog.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
