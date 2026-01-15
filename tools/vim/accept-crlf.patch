@@ -69,18 +69,18 @@ index 0f3f148..016f15d 100644
      {
  	STRCAT(IObuff, shortmess(SHM_TEXT) ? _("[unix]") : _("[unix format]"));
 diff --git a/src/quickfix.c b/src/quickfix.c
-index 7243a0c..3278bd7 100644
+index a7ec10bfe..07094628c 100644
 --- a/src/quickfix.c
 +++ b/src/quickfix.c
-@@ -882,7 +882,7 @@ qf_init_ext(qi, efile, buf, tv, errorformat, newlist, lnumfirst, lnumlast,
+@@ -940,7 +940,7 @@ qf_get_nextline(qfstate_T *state)
      if (state->linelen > 0 && state->linebuf[state->linelen - 1] == '\n')
      {
  	state->linebuf[state->linelen - 1] = NUL;
--#ifdef USE_CRNL
-+#if defined(__MSYS__) || defined(USE_CRNL)
+-# ifdef USE_CRNL
++# if defined(__MSYS__) || defined(USE_CRNL)
  	if (state->linelen > 1 && state->linebuf[state->linelen - 2] == '\r')
  	    state->linebuf[state->linelen - 2] = NUL;
- #endif
+ # endif
 diff --git a/src/structs.h b/src/structs.h
 --- a/src/structs.h
 +++ b/src/structs.h

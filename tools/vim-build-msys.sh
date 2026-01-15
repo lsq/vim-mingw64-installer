@@ -31,6 +31,7 @@ EOF
 
 # sed -i '/\(--with-compiledby=.*$\)/{s/$/ \\\n    --enable-clientserver --enable-lua\necho ${CHOST}\n/};/^sha256sums/{s/^/noextract=(${pkgname}-${pkgver}.tar.gz)\n/};/^prepare/{s#$#\necho $(pwd);	bsdtar -xf "${srcdir}/${pkgname}-${pkgver}.tar.gz" 2>/dev/null || MSYS=winsymlinks:lnk tar zxf "${srcdir}/${pkgname}-${pkgver}.tar.gz";bsdtar -xf "${srcdir}/${pkgname}-${pkgver}.tar.gz"\n#};/^\s\+iconv/{s#^#if file runtime/doc/pi_netrw.txt|grep symbolic; then\ncp "${srcdir}/../cpInfo.ps1" .\npwsh -command ". \x27.\cpInfo.ps1\x27"\nfi\n#}' PKGBUILD
 sed -i '/^makedepends=/{s#\(makedepends=(\)#\1\x27lua\x27 #};/\(--with-compiledby=.*$\)/{s/$/ \necho ${CHOST}\n/};/^sha256sums/{s/^/noextract=(${pkgname}-${pkgver}.tar.gz)\n/};/^prepare/{s#$#\necho $(pwd);	bsdtar -xf "${srcdir}/${pkgname}-${pkgver}.tar.gz" 2>/dev/null || MSYS=winsymlinks:lnk tar zxf "${srcdir}/${pkgname}-${pkgver}.tar.gz";bsdtar -xf "${srcdir}/${pkgname}-${pkgver}.tar.gz"\n#};/^\s\+iconv/{s!^!if file runtime/doc/pi_netrw.txt|grep symbolic; then\ncp "${srcdir}/../cpInfo.ps1" .\npwsh -command ". \x27./cpInfo.ps1\x27"\nfi\nsed -i \x27s/^\\(\\s\\+return (\\*fname.*\\))/\\1 || strchr((char *)fname,\\x27:\\x27))/\x27 src/os_unix.c\nsed -i \x27s/^\#ifdef BACKSLASH_IN_FILENAME/\#if defined (BACKSLASH_IN_FILENAME) || defined (__CYGWIN__)/\x27 src/charset.c\n!}' PKGBUILD
+cp -f ../vim/accept-crlf.patch .
 
 updpkgsums
 makepkg -sCLf --noconfirm
