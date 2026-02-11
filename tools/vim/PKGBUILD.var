@@ -34,7 +34,8 @@ source=(${_realname}-${pkgver}.tar.gz::https://github.com/vim/vim/archive/v${pkg
     '7.3-cygwin-python-dyn.patch'
     'pretend-cygwin-msys.patch'
     'accept-crlf.patch'
-    'vim-completion')
+    'vim-completion'
+    'termcodepage.patch')
 noextract=(${_realname}-${pkgver}.tar.gz)
 sha256sums=('0a34ed1e2ca6a08b5fd28a12c33c39f66f405dddd0e7fc88212c7a90062abf22'
             'edd18e0756406ee7b659e4552e444c50c3a0c1e9fb4fce2ddd770c933ea6c7f5'
@@ -43,7 +44,8 @@ sha256sums=('0a34ed1e2ca6a08b5fd28a12c33c39f66f405dddd0e7fc88212c7a90062abf22'
             'd60db82149b68c6e3bfc7f840191af3e5cbc8af46409ec3b752407689c44f35b'
             '5fcec194d2fcb2a624358d8ce074e8d97b873b5c2fff2118491b57a4880737d9'
             'e0d59cc721de07a6ea9ad73042cbf2c96e93c60bfd70cebb4ba8a56044820c9f'
-            'bdca6069ef0fa995718f4b59fea85e58629259bb5a385d53e52d162d1463d4ff')
+            'bdca6069ef0fa995718f4b59fea85e58629259bb5a385d53e52d162d1463d4ff'
+            'a64885fe16aad3fa04af461cf55ea607021c53322b88fd8a2a5e584ff60154aa')
 
 prepare() {
 	# https://github.com/msys2/MSYS2-packages/issues/1216
@@ -80,6 +82,7 @@ EOF
     patch -p2 -i ${srcdir}/7.3-cygwin-python-dyn.patch
     patch -p1 -i ${srcdir}/pretend-cygwin-msys.patch
     patch -p1 -i ${srcdir}/accept-crlf.patch
+    patch -p1 -i ${srcdir}/termcodepage.patch
 
     # define the place for the global (g)vimrc file (set to /etc/vimrc)
     #sed -i 's|^.*\(#define SYS_.*VIMRC_FILE.*"\) .*$|\1|' \

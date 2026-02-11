@@ -1,0 +1,128 @@
+diff --git a/runtime/doc/options.txt b/runtime/doc/options.txt
+--- a/runtime/doc/options.txt
++++ b/runtime/doc/options.txt
+@@ -9108,6 +9108,22 @@ A jump table for the options with a short description can be found at |Q_op|.
+ 	of Windows 10.  winpty support needs to be installed.  If neither is
+ 	supported then you cannot open a terminal window.
+ 
++						*'termcodepage'* *'tcp'*
++'termcodepage' 'tcp'	string  (default "")
++			global
++			{only available when compiled with the |terminal|
++			feature on MS-Windows}
++	If a command output utf-8 encoding data(not use SetConsoleOutputCP),
++	the output will be tried as ANSI encoding data.
++	Because of windows ConPTY always the child process output ANSI coding
++	data, and use ANSI encode convert to utf-8.
++	Convert the virtual console (pty) outputting from twice encoding utf-8
++	to utf-8  when opening the terminal window.
++
++	Possible values are:
++	    ""		don't convert.
++	    "ansi"	use ansi encoding(GetACP)
++
+ 						*'terse'* *'noterse'*
+ 'terse'			boolean	(default off)
+ 			global
+diff --git a/src/option.h b/src/option.h
+--- a/src/option.h
++++ b/src/option.h
+@@ -1038,6 +1038,7 @@ EXTERN long	p_twsl;		// 'termwinscroll'
+ #endif
+ #if defined(MSWIN) && defined(FEAT_TERMINAL)
+ EXTERN char_u	*p_twt;		// 'termwintype'
++EXTERN char_u	*p_tcp;		// 'termcodepage'
+ #endif
+ EXTERN int	p_terse;	// 'terse'
+ EXTERN int	p_ta;		// 'textauto'
+diff --git a/src/optiondefs.h b/src/optiondefs.h
+--- a/src/optiondefs.h
++++ b/src/optiondefs.h
+@@ -2639,6 +2639,15 @@ static struct vimoption options[] =
+ 			    (char_u *)NULL, PV_NONE, NULL, NULL,
+ #endif
+ 			    {(char_u *)FALSE, (char_u *)0L} SCTX_INIT},
++    {"termcodepage", "tcp", P_STRING|P_VI_DEF,
++#if defined(MSWIN) && defined(FEAT_TERMINAL)
++    (char_u *)&p_tcp, PV_NONE, did_set_termcodepage, expand_set_encoding,
++    {(char_u *)"", (char_u *)0L}
++#else
++    (char_u *)NULL, PV_NONE, NULL, NULL,
++    {(char_u *)0L, (char_u *)0L}
++#endif
++    SCTX_INIT},
+     {"termencoding", "tenc", P_STRING|P_VI_DEF|P_RCLR,
+ 			    (char_u *)&p_tenc, PV_NONE, did_set_encoding, expand_set_encoding,
+ 			    {(char_u *)"", (char_u *)0L}
+diff --git a/src/optionstr.c b/src/optionstr.c
+--- a/src/optionstr.c
++++ b/src/optionstr.c
+@@ -4442,6 +4442,33 @@ expand_set_termwintype(optexpand_T *args, int *numMatches, char_u ***matches)
+ 	    numMatches,
+ 	    matches);
+ }
++char *
++did_set_termcodepage(optset_T *args UNUSED)
++{
++    char_u	*s, *p;
++
++    // Canonize 'termcodepage' if VIM standard one
++    p = enc_canonize(p_tcp);
++    if (p != NULL)
++    {
++	vim_free(p_tcp);
++	p_tcp= p;
++    }
++    else
++    {
++	// Ensure lower case and '-' for '_'
++	for (s = p_tcp; *s != NUL; s++)
++	{
++	    if (*s == '_')
++		*s = '-';
++	    else
++		*s = TOLOWER_ASC(*s);
++	}
++    }
++
++    return NULL;
++}
++
+ # endif
+ #endif
+ 
+diff --git a/src/proto/optionstr.pro b/src/proto/optionstr.pro
+--- a/src/proto/optionstr.pro
++++ b/src/proto/optionstr.pro
+@@ -181,6 +181,7 @@ char *did_set_term_option(optset_T *args);
+ char *did_set_termwinkey(optset_T *args);
+ char *did_set_termwinsize(optset_T *args);
+ char *did_set_termwintype(optset_T *args);
++char *did_set_termcodepage(optset_T *args);
+ int expand_set_termwintype(optexpand_T *args, int *numMatches, char_u ***matches);
+ char *did_set_titlestring(optset_T *args);
+ char *did_set_toolbar(optset_T *args);
+diff --git a/src/terminal.c b/src/terminal.c
+--- a/src/terminal.c
++++ b/src/terminal.c
+@@ -1910,7 +1910,10 @@ add_scrollback_line_to_buffer(term_T *term, char_u *text, int len)
+     linenr_T	lnum = buf->b_ml.ml_line_count;
+ 
+ #ifdef MSWIN
++    //https://deepwiki.com/search/windowssystem_a0285730-3575-4b5d-bf71-f8b7a069d396
++    //https://deepwiki.com/search/terminal-windowswinptyconpty_f621b241-364d-40af-ba89-3ebbd29d0740
++    int termcodepage = encname2codepage(p_tcp);
+-    if (!enc_utf8 && enc_codepage > 0)
++    if ((!enc_utf8 && enc_codepage > 0) || (enc_utf8 && termcodepage> 0))
+     {
+ 	WCHAR   *ret = NULL;
+ 	int	length = 0;
+@@ -1919,7 +1919,7 @@ add_scrollback_line_to_buffer(term_T *term, char_u *text, int len)
+ 							   &ret, &length);
+ 	if (ret != NULL)
+ 	{
+-	    WideCharToMultiByte_alloc(enc_codepage, 0,
++	    WideCharToMultiByte_alloc(enc_codepage? enc_codepage: termcodepage, 0,
+ 				      ret, length, (char **)&text, &len, 0, 0);
+ 	    vim_free(ret);
+ 	    ml_append_buf(term->tl_buffer, lnum, text, len, FALSE);
