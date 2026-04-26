@@ -105,19 +105,20 @@ diff --git a/src/proto/optionstr.pro b/src/proto/optionstr.pro
 diff --git a/src/terminal.c b/src/terminal.c
 --- a/src/terminal.c
 +++ b/src/terminal.c
-@@ -1910,7 +1910,10 @@ add_scrollback_line_to_buffer(term_T *term, char_u *text, int len)
+@@ -2025,8 +2025,11 @@
      linenr_T	lnum = buf->b_ml.ml_line_count;
  
  #ifdef MSWIN
 +    //https://deepwiki.com/search/windowssystem_a0285730-3575-4b5d-bf71-f8b7a069d396
 +    //https://deepwiki.com/search/terminal-windowswinptyconpty_f621b241-364d-40af-ba89-3ebbd29d0740
 +    int termcodepage = encname2codepage(p_tcp);
+     char_u *tmp = text;
 -    if (!enc_utf8 && enc_codepage > 0)
 +    if ((!enc_utf8 && enc_codepage > 0) || (enc_utf8 && termcodepage> 0))
      {
  	WCHAR   *ret = NULL;
  	int	length = 0;
-@@ -1919,7 +1919,7 @@ add_scrollback_line_to_buffer(term_T *term, char_u *text, int len)
+@@ -2035,7 +2038,7 @@
  							   &ret, &length);
  	if (ret != NULL)
  	{
@@ -125,4 +126,4 @@ diff --git a/src/terminal.c b/src/terminal.c
 +	    WideCharToMultiByte_alloc(enc_codepage? enc_codepage: termcodepage, 0,
  				      ret, length, (char **)&text, &len, 0, 0);
  	    vim_free(ret);
- 	    ml_append_buf(term->tl_buffer, lnum, text, len, FALSE);
+ 	}
