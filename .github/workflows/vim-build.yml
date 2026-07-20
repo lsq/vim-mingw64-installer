@@ -119,7 +119,7 @@ jobs:
           echo "tagName=${{ needs.check-version.outputs.vim_tag }}" >> $env:GITHUB_ENV
 
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: msys2/setup-msys2@v2
         with:

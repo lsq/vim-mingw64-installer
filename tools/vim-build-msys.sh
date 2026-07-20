@@ -5,7 +5,7 @@ echo "MSYSTEM: $MSYSTEM"
 realpath=$(realpath "$0")
 basedir="${realpath%/*}"
 vim_msys="https://github.com/msys2/MSYS2-packages/tree/master/vim"
-npm install @dking/dgit -g
+npm install @bratel/dgit -g
 dgit d $vim_msys -d $basedir/vim-msys
 cd $basedir/vim-msys || exit 1
 # find "$basedir/vim/src/" -name "cpInfo.ps1" -exec cp -rf {} . \;
