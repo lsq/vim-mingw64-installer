@@ -105,13 +105,19 @@ $racketInfo = (scoop search racket-bc)
 $racketVer = $racketInfo.Version
 $racketName = $racketInfo.Name
 $rkBucket = $racketInfo.Source
+$jsonPath = ".\racket.json"
 #$racketDownUrl = ((Get-Content -Raw $env:scoop\buckets\$rkBucket\bucket\$racketName.json) | ConvertFrom-Json).architecture."64bit".url -replace '#/dl.7z'
-#$racketDownUrl = "https://users.cs.utah.edu/plt/installers/$racketVer/racket-$racketVer-x86_64-win32-bc.exe"
-#iwr $racketDownUrl -OutFile $env:scoop\cache\$racketName-$racketVer.exe
+$racketDownUrlOrig = "https://users.cs.utah.edu/plt/installers/$racketVer/racket-$racketVer-x86_64-win32-bc.exe"
+$racketJsonPath = "$env:scoop\buckets\$rkBucket\bucket\$racketName.json"
+$racketDownUrl = "https://github.com/lsq/actionSource/releases/download/v0.0.1/racket-8.17-x86_64-win32-bc.exe"
+(Get-Content $racketJsonPath -Raw) -replace $racketDownUrlOrig, $racketDownUrl | Set-Content $jsonPath -Encoding Utf8
+# iwr $racketDownUrl -OutFile $env:scoop\cache\$racketName-$racketVer.exe
 #if (Test-Path $(scoop prefix racket-bc)) {scoop uninstall racket-bc}
 (scoop list) | ForEach-Object { if ($_.name -match "racket-bc") { scoop uninstall racket-bc } }
-scoop install racket-bc
+scoop install $jsonPath
 cp $env:scoop\apps\$racketName\current\lib\libracket*.dll C:\Windows\System32\
+which npm
+npm install -g @bratel/dgit
 function downGit($repo, $folder) {
     $json = irm https://api.github.com/repos/$repo/contents/$($folder)?ref=master
     $json | ForEach-Object {
@@ -119,8 +125,9 @@ function downGit($repo, $folder) {
         iwr -useb $($_).download_url | ni $_.path -Force
     }
 }
-downGit "msys2/MSYS2-packages" "vim"
+# downGit "msys2/MSYS2-packages" "vim"
 #downGit "lsq/officetools" "tools/vim"
+dgit d https://github.com/msys2/MSYS2-packages/tree/master/vim -d vim
 
 <#
 # Customize the location you want to install to,
