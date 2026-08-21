@@ -1,0 +1,72 @@
+--- a/src/option.c	2026-08-20 05:50:34.000000000 +0800
++++ b/src/option.c	2026-08-20 23:44:47.560501800 +0800
+@@ -457,6 +457,45 @@
+ }
+ #endif
+ 
++#if defined(MSWIN)
++/*
++ * If running inside an MSYS2 / Git-Bash / Cygwin-like shell (detected via
++ * $MSYSTEM or a POSIX-style $SHELL), switch 'runtimepath' and 'packpath'
++ * to the Unix-style "~/.vim" layout instead of "~/vimfiles".
++ */
++    static void
++set_init_msys_rtp(void)
++{
++    int		opt_idx;
++    char_u	*msystem = mch_getenv("MSYSTEM");
++    char_u	*shell = mch_getenv("SHELL");
++    int		is_unix_shell = FALSE;
++
++    if (msystem != NULL && *msystem != NUL)
++	is_unix_shell = TRUE;
++    else if (shell != NULL &&
++	    (vim_strchr(shell, '/') != NULL ||
++	     vim_strchr(shell, '\\') != NULL ||
++	     strstr((char *)shell, "bash") != NULL ||
++	     strstr((char *)shell, "zsh")  != NULL ||
++	     strstr((char *)shell, "sh")  != NULL))
++	is_unix_shell = TRUE;
++
++    if (!is_unix_shell)
++	return;
++
++    if ((opt_idx = findoption((char_u *)"runtimepath")) < 0)
++	return;
++    options[opt_idx].def_val[VI_DEFAULT] = (char_u *)MSYS_RUNTIMEPATH;
++    p_rtp = (char_u *)MSYS_RUNTIMEPATH;
++
++    if ((opt_idx = findoption((char_u *)"packpath")) < 0)
++	return;
++    options[opt_idx].def_val[VI_DEFAULT] = (char_u *)MSYS_RUNTIMEPATH;
++    p_pp = (char_u *)MSYS_RUNTIMEPATH;
++}
++#endif
++
+ /*
+  * Expand environment variables and things like "~" for the defaults.
+  * If option_expand() returns non-NULL the variable is expanded.  This can
+@@ -739,6 +778,10 @@
+     set_init_restricted_mode();
+ #endif
+ 
++#if defined(MSWIN)
++    set_init_msys_rtp();
++#endif
++
+ #ifdef CLEAN_RUNTIMEPATH
+     if (clean_arg)
+ 	set_init_clean_rtp();
+--- a/src/os_dos.h	2026-08-20 05:50:34.000000000 +0800
++++ b/src/os_dos.h	2026-08-20 23:26:05.345075000 +0800
+@@ -106,6 +106,10 @@
+ 
+ #define DFLT_ERRORFILE		"errors.err"
+ #define DFLT_RUNTIMEPATH	"$HOME/vimfiles,$VIM/vimfiles,$VIMRUNTIME,$HOME/vimfiles/after,$VIM/vimfiles/after"
++#ifndef MSYS_RUNTIMEPATH
++# define MSYS_RUNTIMEPATH \
++    "$HOME/.vim,$VIM/vimfiles,$VIMRUNTIME,$VIM/vimfiles/after,$HOME/.vim/after"
++#endif
+ #define CLEAN_RUNTIMEPATH	"$VIM/vimfiles,$VIMRUNTIME,$VIM/vimfiles/after"
+ 
+ #define CASE_INSENSITIVE_FILENAME   // ignore case when comparing file names
