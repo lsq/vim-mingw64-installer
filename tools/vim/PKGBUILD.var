@@ -35,6 +35,7 @@ source=(${_realname}-${pkgver}.tar.gz::https://github.com/vim/vim/archive/v${pkg
     'pretend-cygwin-msys.patch'
     'accept-crlf.patch'
     'vim-completion'
+    'default-runtimepath.patch'
     'termcodepage.patch')
 noextract=(${_realname}-${pkgver}.tar.gz)
 sha256sums=('0a34ed1e2ca6a08b5fd28a12c33c39f66f405dddd0e7fc88212c7a90062abf22'
@@ -45,6 +46,7 @@ sha256sums=('0a34ed1e2ca6a08b5fd28a12c33c39f66f405dddd0e7fc88212c7a90062abf22'
             '5fcec194d2fcb2a624358d8ce074e8d97b873b5c2fff2118491b57a4880737d9'
             'e0d59cc721de07a6ea9ad73042cbf2c96e93c60bfd70cebb4ba8a56044820c9f'
             'bdca6069ef0fa995718f4b59fea85e58629259bb5a385d53e52d162d1463d4ff'
+            'be65124f1ffa94a72190b0922837f0e504c859468813eddd664f0ec80c4e88d8'
             'f7f7d0b7f201d06d260a10668d81a99948ff77693042e126b3b72116acceb3d9')
 
 prepare() {
@@ -57,9 +59,9 @@ prepare() {
 	#tar zxf "${srcdir}/${pkgname}-${pkgver}.tar.gz" || true
 	#MSYS=winsymlinks:lnk tar zxf "${srcdir}/${_realname}-${pkgver}.tar.gz"
     cd ${srcdir}/${_realname}-${pkgver}
-    
+
     echo $(file runtime/doc/pi_netrw.txt)
-    
+
     if file runtime/doc/pi_netrw.txt|grep symbolic; then
     cat >cpInfo.ps1 <<-'EOF'
 Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
@@ -83,6 +85,7 @@ EOF
     patch -p1 -i ${srcdir}/pretend-cygwin-msys.patch
     patch -p1 -i ${srcdir}/accept-crlf.patch
     patch -p1 -i ${srcdir}/termcodepage.patch
+    patch -p1 -i ${srcdir}/default-runtimepath.patch
 
     # define the place for the global (g)vimrc file (set to /etc/vimrc)
     #sed -i 's|^.*\(#define SYS_.*VIMRC_FILE.*"\) .*$|\1|' \
@@ -102,8 +105,15 @@ EOF
     sed -i '/\@echo char_u \*all_cflags.*/s/$/\n\t@echo -+-+-+-+-+-\"\$(LUA_LIB) \$(MZSCHEME_LIBDIR) \$(MZSCHEME_LIB) \$(PYTHONLIB) \$(PYTHON3LIB) \$(RUBYLIB)\" >> lb.txt\n/' src/Make_cyg_ming.mak
 
     # patch window ucrt build used for mingw64 shell enviroment;
-    #sed -i '/p = exe_name;/s/^.*$/{char_u \*phf;char_u \*p_shell;int exe_len;if (exe_name != NULL \&\& \*exe_name != NUL){char_u \*exe_pend;exe_pend = gettail(exe_name);exe_len = STRLEN(exe_name) - STRLEN(exe_pend); phf = alloc(exe_len + 4);if (phf != NULL){STRNCPY(phf, exe_name, exe_len);STRCPY(phf + exe_len, (char_u \*)"doc");}};if ((p_shell = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p_shell != NUL \&\& phf != NULL  \&\& \*phf != NUL \&\& access(phf, F_OK) != 0 \&\& access(default_vimruntime_dir, F_OK) == 0) {p = default_vimruntime_dir;}else{p = exe_name;}}/' src/misc1.c
-     sed -i '/^#ifdef HAVE_PATHDEF/{:b;N;s/\(#ifdef HAVE_PATHDEF\n\s\+\&.*\)/\1/;t e; s/\(#ifdef HAVE_PATHDEF\n\s\+\/.*\)\(\n#endif\)$/\1\nelse { if (vimruntime \&\& \*default_vimruntime_dir != NUL) { char_u \*phf; int p_len; p_len = STRLEN(p); phf = alloc(p_len + 5); if (phf != NULL) { STRNCPY(phf, p, p_len); STRCPY(phf + p_len, (char_u \*)"\/doc"); } if (\*phf != NUL \&\& !mch_isdir(phf) \&\& mch_isdir(default_vimruntime_dir)) { p = default_vimruntime_dir; \*mustfree = FALSE; } } }\2/;T b;:e}' src/misc1.c
+    # sed -i '/p = exe_name;/s/^.*$/{char_u \*phf;char_u \*p_shell;int exe_len;if (exe_name != NULL \&\& \*exe_name != NUL){char_u \*exe_pend;exe_pend = gettail(exe_name);exe_len = STRLEN(exe_name) - STRLEN(exe_pend); phf = alloc(exe_len + 4);if (phf != NULL){STRNCPY(phf, exe_name, exe_len);STRCPY(phf + exe_len, (char_u \*)"doc");}};if ((p_shell = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p_shell != NUL \&\& phf != NULL  \&\& \*phf != NUL \&\& access(phf, F_OK) != 0 \&\& access(default_vimruntime_dir, F_OK) == 0) {p = default_vimruntime_dir;}else{p = exe_name;}}/' src/misc1.c
+    sed -i '/^#ifdef HAVE_PATHDEF/{:b;N;s/\(#ifdef HAVE_PATHDEF\n\s\+\&.*\)/\1/;t e; s/\(#ifdef HAVE_PATHDEF\n\s\+\/.*\)\(\n#endif\)$/\1\nelse { if (vimruntime \&\& \*default_vimruntime_dir != NUL) { char_u \*phf; int p_len; p_len = STRLEN(p); phf = alloc(p_len + 5); if (phf != NULL) { STRNCPY(phf, p, p_len); STRCPY(phf + p_len, (char_u \*)"\/doc"); } if (\*phf != NUL \&\& !mch_isdir(phf) \&\& mch_isdir(default_vimruntime_dir)) { p = default_vimruntime_dir; \*mustfree = FALSE; free(phf);} } }\2/;T b;:e}' src/misc1.c
+
+    # https://deepwiki.com/search/windowsvimrcvimfiles-runtimepa_cba2dadc-1cd0-4b33-962f-b515c3bbdc63
+    # If Vim detects it is running inside an MSYS2 or Git-Bash-like shell
+    # (the $MSYSTEM environment variable is set, or $SHELL looks like a Unix
+    # shell), it will use "~/.vim" instead of "~/vimfiles" as the default
+    # 'runtimepath' entry, matching Unix conventions.
+    # sed -i 's#^\(\#define DFLT_RUNTIMEPATH.*\)#\1\n\#ifndef MSYS_RUNTIMEPATH\n\# define MSYS_RUNTIMEPATH "\$HOME/.vim,\$VIM/vimfiles,\$VIMRUNTIME,\$VIM/vimfiles/after,\$HOME/.vim/after"\n#endif#' src/os_dos.h
 
     # patch system() in zsh terminal: p_shcf is "/c", not "-c"
     # https://deepwiki.com/search/windowssystem_bb79f553-2332-423c-a77d-e983d1da94e4
@@ -111,7 +121,7 @@ EOF
 
     # patch mch_settmode() with windows 10 terminal support raw mode;
     sed -i 's/\(ENABLE_ECHO_INPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_INPUT/; s/\(ENABLE_PROCESSED_OUTPUT \?\)/\1 | ENABLE_VIRTUAL_TERMINAL_PROCESSING/' src/os_win32.c
-    
+
     # patch windows terminal bash/zsh enviroments path backslash error;
     sed -i '/mch_init();$/{s/$/\n{char_u \*p; if ((p = mch_getenv((char_u \*)"SHELL")) != NULL \&\& \*p != NUL) {p_ssl = TRUE;}\n#if defined(BACKSLASH_IN_FILENAME) || defined(PROTO)\ndid_set_shellslash(NULL);\n#endif\n}/}' src/main.c
 
