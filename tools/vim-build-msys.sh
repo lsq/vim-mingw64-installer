@@ -5,9 +5,10 @@ echo "MSYSTEM: $MSYSTEM"
 realpath=$(realpath "$0")
 basedir="${realpath%/*}"
 vim_msys="https://github.com/msys2/MSYS2-packages/tree/master/vim"
+proxy="https://gh-proxy.com"
 npm install @bratel/dgit -g
-dgit d $vim_msys -d $basedir/vim-msys
-cd $basedir/vim-msys || exit 1
+dgit d $vim_msys -d "$basedir"/vim-msys --proxy "$proxy" --exact-match
+cd "$basedir"/vim-msys || exit 1
 # find "$basedir/vim/src/" -name "cpInfo.ps1" -exec cp -rf {} . \;
 [ -z "$vimTag" ] && newerVer="$vimLatestVer"
 if [ -n "$newerVer" ]; then
