@@ -89,7 +89,7 @@ pymajor=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-
 pyminor=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\3/p')
 pyversion=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2})\.)[0-9]{1,2}.*/\2\3/p') # 313
 pyapiver=$(echo "${pythonver}" | sed -r -n 's/.*(([0-9]{1,2})\.([0-9]{1,2}))\.[0-9]{1,2}.*/\1/p')    # 3.13
-if pacboy find "python${pyapiver}:p"; then
+if pacboy find "python${pyapiver}:p" || pacboy find '^mingw-w64-ucrt-x86_64-python$'; then
     pacboy find "python${pyapiver}:p"
 else
     pyversion=$((pyversion - 1))
